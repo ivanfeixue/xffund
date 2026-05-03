@@ -1,0 +1,13 @@
+name = "xffund"
+type = "javascript-next"
+account_id = ""
+workers_dev = false
+
+[[redirects]]
+from = "/"
+to = "/index.html"
+status = 200
+
+[build]
+command = ""
+publish = "."
