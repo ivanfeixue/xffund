@@ -1,0 +1,14 @@
+# WorkBuddy internal files
+.workbuddy/
+
+# Local server (not needed for deployment)
+local_server.py
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+.vscode/

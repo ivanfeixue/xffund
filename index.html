@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>FundVault</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--bg-0:#08080d;--bg-1:#0e0e16;--bg-2:#151520;--bg-3:#1c1c2c;--bg-4:#24243a;--border:#2a2a42;--gold:#c8a84e;--gold-light:#e0c068;--text:#e8e4dc;--text-2:#9e9a90;--text-3:#5c5850;--green:#50c878;--red:#e85050;--blue:#5090e8;--orange:#e89850;--sidebar-w:220px;--header-h:60px;--font-display:'Playfair Display','Noto Serif SC',Georgia,serif;--font-mono:'DM Mono','Menlo','Consolas',monospace;--font-body:-apple-system,'PingFang SC','Microsoft YaHei','Segoe UI',sans-serif;--radius:10px;--radius-sm:6px}
+html{font-size:14px}body{font-family:var(--font-body);color:var(--text);background:var(--bg-0);min-height:100vh;overflow-x:hidden;line-height:1.6;-webkit-tap-highlight-color:transparent}
+body::before{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");opacity:.03}
+button{font-family:inherit;cursor:pointer;border:none;outline:none}input,select,textarea{font-family:inherit;outline:none}
+#api-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:500;padding:14px 24px;border-bottom:2px solid}
+#api-banner.err{background:linear-gradient(135deg,#1a0808,#2a0a0a);border-color:var(--red)}
+#api-banner.ok{background:linear-gradient(135deg,#081a0a,#0a2a0d);border-color:var(--green)}
+#api-banner.show{display:flex;align-items:center;gap:14px}
+#api-banner .ab-icon{font-size:1.2rem;flex-shrink:0}
+#api-banner .ab-text{flex:1;font-size:.83rem;color:var(--text);line-height:1.6}
+#api-banner .ab-close{background:transparent;color:var(--text-3);font-size:1.2rem;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+#api-banner .ab-close:hover{background:rgba(255,255,255,.1);color:var(--text)}
+body.has-banner{padding-top:90px}
+#app-header{position:fixed;top:0;left:0;right:0;height:var(--header-h);z-index:100;background:rgba(14,14,22,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px}
+body.has-banner #app-header{top:70px}
+.logo{font-family:var(--font-display);font-size:1.3rem;font-weight:700;color:var(--gold)}.logo span{color:var(--text-2);font-weight:400;font-size:.85rem;margin-left:8px}
+.header-actions{display:flex;gap:10px;align-items:center}
+.btn{padding:8px 18px;border-radius:var(--radius-sm);font-size:.85rem;font-weight:500;transition:all .2s ease;display:inline-flex;align-items:center;gap:6px;min-height:36px}
+.btn-gold{background:var(--gold);color:var(--bg-0)}.btn-gold:hover{background:var(--gold-light)}
+.btn-outline{background:transparent;color:var(--text-2);border:1px solid var(--border)}.btn-outline:hover{border-color:var(--gold);color:var(--gold)}
+.btn-sm{padding:5px 12px;font-size:.78rem}
+.btn-danger{background:transparent;color:var(--red);border:1px solid rgba(232,80,80,.3)}.btn-danger:hover{background:rgba(232,80,80,.1)}
+.btn-green{background:transparent;color:var(--green);border:1px solid rgba(80,200,120,.3)}.btn-green:hover{background:rgba(80,200,120,.1)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+#refresh-status{font-size:.75rem;color:var(--text-3);margin-right:8px}
+#sidebar{position:fixed;top:var(--header-h);left:0;bottom:0;width:var(--sidebar-w);z-index:90;background:var(--bg-1);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:20px 0}
+body.has-banner #sidebar{top:calc(var(--header-h) + 70px)}
+.nav-item{display:flex;align-items:center;gap:10px;padding:12px 24px;color:var(--text-3);font-size:.9rem;cursor:pointer;transition:all .2s;border-left:3px solid transparent}
+.nav-item:hover{color:var(--text-2);background:rgba(200,168,78,.04)}.nav-item.active{color:var(--gold);border-left-color:var(--gold);background:rgba(200,168,78,.06)}
+.nav-item .dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:0}.nav-item.active .dot{opacity:1}
+.sidebar-footer{margin-top:auto;padding:16px 24px;font-size:.72rem;color:var(--text-3);border-top:1px solid var(--border)}
+#main{margin-left:var(--sidebar-w);margin-top:var(--header-h);padding:28px 32px;min-height:calc(100vh - var(--header-h))}
+body.has-banner #main{margin-top:calc(var(--header-h) + 70px)}
+.view{display:none;animation:fadeUp .4s ease}.view.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.view-title{font-family:var(--font-display);font-size:1.6rem;font-weight:600;margin-bottom:24px}
+.view-subtitle{font-size:.95rem;color:var(--text-2);font-weight:500;margin:24px 0 14px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:28px}
+.stat-card{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),transparent);opacity:.6}
+.stat-label{font-size:.78rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.stat-value{font-family:var(--font-mono);font-size:1.6rem;font-weight:500;color:var(--text)}
+.stat-sub{font-family:var(--font-mono);font-size:.82rem;margin-top:6px}.stat-sub.up{color:var(--green)}.stat-sub.down{color:var(--red)}.stat-sub.flat{color:var(--text-3)}
+.platform-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-bottom:28px}
+.platform-card{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.platform-card:hover{border-color:rgba(200,168,78,.4);transform:translateY(-1px)}
+.platform-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--gold);opacity:0;transition:opacity .2s}
+.platform-card:active::before{opacity:.6}
+.platform-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.platform-card-name{font-size:.95rem;font-weight:500}
+.platform-card-count{font-family:var(--font-mono);font-size:.75rem;color:var(--text-3);background:var(--bg-4);padding:2px 8px;border-radius:10px}
+.platform-card-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.platform-card-stat .label{font-size:.7rem;color:var(--text-3);margin-bottom:2px}.platform-card-stat .value{font-family:var(--font-mono);font-size:.88rem;font-weight:500}
+.platform-card-stat .value.up{color:var(--green)}.platform-card-stat .value.down{color:var(--red)}
+.platform-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;padding:0 20px}
+.platform-tab{padding:6px 14px;border-radius:20px;font-size:.78rem;cursor:pointer;transition:all .2s;background:var(--bg-3);color:var(--text-3);border:1px solid transparent;white-space:nowrap}
+.platform-tab:hover{color:var(--text-2);border-color:var(--border)}
+.platform-tab.active{background:rgba(200,168,78,.12);color:var(--gold);border-color:rgba(200,168,78,.3)}
+.summary-bar{display:flex;gap:24px;padding:14px 20px;background:var(--bg-3);border-radius:var(--radius-sm);margin:0 20px 16px;flex-wrap:wrap}
+.summary-item .label{font-size:.72rem;color:var(--text-3);margin-bottom:2px}.summary-item .value{font-family:var(--font-mono);font-size:.95rem;font-weight:500}
+.summary-item .value.up{color:var(--green)}.summary-item .value.down{color:var(--red)}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px}
+.chart-box{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.chart-title{font-size:.85rem;color:var(--text-2);margin-bottom:16px;font-weight:500}
+.chart-box canvas{width:100%;height:260px;display:block}
+.chart-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--text-2)}.legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.table-wrap{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.table-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}.table-header h3{font-size:.95rem;font-weight:500}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:12px 16px;font-size:.75rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);font-weight:500;white-space:nowrap}
+td{padding:14px 16px;border-bottom:1px solid rgba(42,42,66,.4);font-size:.88rem;white-space:nowrap}tr:hover td{background:rgba(200,168,78,.02)}
+.td-code{font-family:var(--font-mono);color:var(--text-2);font-size:.82rem}.td-money{font-family:var(--font-mono);font-weight:500}.td-actions{display:flex;gap:6px}
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.72rem;background:var(--bg-4);color:var(--text-2)}
+.tag-dca{background:rgba(80,200,120,.12);color:var(--green);font-size:.68rem;padding:1px 6px;border-radius:3px;margin-left:4px}
+.tag-auto{background:rgba(80,144,232,.12);color:var(--blue);font-size:.62rem;padding:1px 5px;border-radius:3px;margin-left:3px}
+.tag-source{font-size:.65rem;color:var(--text-3);display:block;margin-top:2px}
+.empty-state{text-align:center;padding:80px 20px}
+.empty-icon{width:80px;height:80px;margin:0 auto 20px;border-radius:50%;background:var(--bg-3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center}
+.empty-icon svg{width:36px;height:36px;stroke:var(--gold);fill:none;stroke-width:1.5}
+.empty-state h2{font-family:var(--font-display);font-size:1.4rem;margin-bottom:10px}.empty-state p{color:var(--text-3);margin-bottom:24px;max-width:420px;margin-left:auto;margin-right:auto}
+.modal-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}.modal-overlay.active{opacity:1;pointer-events:auto}
+.modal{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);width:100%;max-width:520px;max-height:90vh;overflow-y:auto;transform:translateY(20px) scale(.97);transition:transform .25s;box-shadow:0 24px 80px rgba(0,0,0,.5)}.modal-overlay.active .modal{transform:translateY(0) scale(1)}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border)}.modal-head h2{font-family:var(--font-display);font-size:1.2rem;font-weight:600}
+.modal-close{width:32px;height:32px;border-radius:50%;background:var(--bg-3);color:var(--text-3);display:flex;align-items:center;justify-content:center;font-size:1.1rem}.modal-close:hover{background:var(--bg-4);color:var(--text)}
+.modal-body{padding:24px}.form-row{margin-bottom:18px}.form-row label{display:block;font-size:.8rem;color:var(--text-2);margin-bottom:6px;font-weight:500}
+.form-row input,.form-row select,.form-row textarea{width:100%;padding:12px 14px;background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:16px;transition:border-color .2s}.form-row input:focus,.form-row select:focus,.form-row textarea:focus{border-color:var(--gold)}.form-row input::placeholder,.form-row textarea::placeholder{color:var(--text-3)}
+.form-row textarea{height:200px;font-family:var(--font-mono);font-size:.82rem;resize:vertical}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;padding-top:18px;border-top:1px solid var(--border)}
+.fund-hint{font-size:.78rem;margin-top:6px;min-height:1.2em;line-height:1.5}.fund-hint.ok{color:var(--green)}.fund-hint.warn{color:var(--orange)}.fund-hint.err{color:var(--red)}
+.form-divider{border:none;border-top:1px solid var(--border);margin:20px 0}
+.form-hint{font-size:.72rem;color:var(--text-3);margin-top:4px}
+.dca-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0}.dca-toggle-row label{margin-bottom:0}
+.dca-card{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;transition:border-color .2s}.dca-card:hover{border-color:rgba(200,168,78,.3)}
+.dca-card-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+.dca-card-title{font-size:1rem;font-weight:500}.dca-card-title .code{font-family:var(--font-mono);color:var(--text-2);font-size:.82rem;margin-left:6px}
+.dca-card-freq{font-size:.78rem;color:var(--green);margin-top:4px}
+.dca-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:12px;margin-bottom:14px}
+.dca-card-stat .label{font-size:.72rem;color:var(--text-3);margin-bottom:2px}.dca-card-stat .value{font-family:var(--font-mono);font-size:.92rem;font-weight:500}
+.dca-card-stat .value.up{color:var(--green)}.dca-card-stat .value.down{color:var(--red)}.dca-card-stat .value.muted{color:var(--orange)}
+.dca-card-actions{display:flex;gap:8px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--border)}
+.dca-history{display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}.dca-history.show{display:block}
+.dca-history table{width:100%}.dca-history th{padding:8px 10px;font-size:.7rem}.dca-history td{padding:8px 10px;font-size:.8rem}
+.settings-section{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.settings-section h3{font-size:.95rem;margin-bottom:16px;font-weight:500}
+.setting-item{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(42,42,66,.3)}.setting-item:last-child{border-bottom:none}
+.setting-info{flex:1;margin-right:16px}.setting-info .label{font-size:.88rem;color:var(--text)}.setting-info .desc{font-size:.78rem;color:var(--text-3);margin-top:2px}
+.toggle{width:44px;height:24px;background:var(--bg-4);border-radius:12px;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}.toggle.on{background:var(--gold)}.toggle::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:var(--text);top:3px;left:3px;transition:transform .2s}.toggle.on::after{transform:translateX(20px)}
+.toggle-sm{width:36px;height:20px}.toggle-sm::after{width:14px;height:14px;top:3px;left:3px}.toggle-sm.on::after{transform:translateX(16px)}
+.diag-grid{display:grid;gap:10px;margin-top:16px}
+.diag-item{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--bg-3);border-radius:var(--radius-sm);font-size:.85rem}
+.diag-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}.diag-dot.ok{background:var(--green)}.diag-dot.fail{background:var(--red)}.diag-dot.pending{background:var(--text-3);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+.diag-name{flex:1;color:var(--text)}.diag-detail{color:var(--text-3);font-size:.78rem;font-family:var(--font-mono)}
+.diag-tip{margin-top:16px;padding:16px;background:rgba(200,168,78,.06);border:1px solid rgba(200,168,78,.15);border-radius:var(--radius-sm);font-size:.82rem;color:var(--text-2);line-height:1.8}
+#toast-container{position:fixed;top:72px;right:24px;z-index:300;display:flex;flex-direction:column;gap:8px}
+body.has-banner #toast-container{top:142px}
+.toast{padding:12px 20px;border-radius:var(--radius-sm);font-size:.85rem;background:var(--bg-3);border:1px solid var(--border);color:var(--text);box-shadow:0 8px 32px rgba(0,0,0,.3);transform:translateX(120%);transition:transform .3s ease;max-width:380px;line-height:1.5}.toast.show{transform:translateX(0)}
+.toast.success{border-left:3px solid var(--green)}.toast.error{border-left:3px solid var(--red)}.toast.info{border-left:3px solid var(--blue)}.toast.warn{border-left:3px solid var(--orange)}
+
+/* ===== 手机持仓卡片 ===== */
+.holdings-mobile{display:none;padding:16px}
+.hcard{background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;animation:fadeUp .3s ease}
+.hcard-head{margin-bottom:14px}
+.hcard-title{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.hcard-name{font-size:.95rem;font-weight:500}
+.hcard-meta{display:flex;align-items:center;gap:8px;margin-top:6px}
+.hcard-code{font-family:var(--font-mono);font-size:.78rem;color:var(--text-3)}
+.hcard-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+.hcard-stat .label{font-size:.7rem;color:var(--text-3);margin-bottom:3px}.hcard-stat .value{font-family:var(--font-mono);font-size:.85rem;font-weight:500}
+.hcard-stat .value.up{color:var(--green)}.hcard-stat .value.down{color:var(--red)}
+.hcard-stat .nav-date{font-size:.65rem;color:var(--text-3);margin-top:2px}
+.hcard-actions{display:flex;gap:8px;padding-top:12px;border-top:1px solid var(--border)}
+
+/* ===== 响应式 ===== */
+/* 默认：桌面端显示，移动端隐藏（由下方媒体查询控制切换） */
+.holdings-desktop{display:none}
+.holdings-mobile{display:block}
+@media(max-width:900px){
+  :root{--sidebar-w:0px;--header-h:56px}
+  html{font-size:15px}
+  #sidebar{display:none!important}
+  #app-header{height:56px;padding:0 12px}
+  body.has-banner #app-header{top:56px}
+  body.has-banner #main{padding-top:calc(56px + 56px + 8px)}
+  body:not(.has-banner) #main{padding-top:calc(56px + 8px)}
+  #main{padding:12px 12px calc(68px + env(safe-area-inset-bottom,0px))}
+  /* 头部 */
+  .logo{font-size:1.1rem}.logo span{display:none}
+  .header-actions{gap:4px}
+  .header-actions .btn{padding:6px 10px;font-size:.75rem;min-height:36px;min-width:36px;border-radius:6px}
+  #refresh-status{display:none}
+  /* 视图 */
+  .view-title{font-size:1.15rem;margin-bottom:14px}
+  .view-subtitle{font-size:.88rem;margin:14px 0 10px}
+  /* 统计卡片 */
+  .stats-grid{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+  .stat-card{padding:12px 10px;border-radius:8px}
+  .stat-card::before{height:2px}
+  .stat-label{font-size:.7rem;margin-bottom:4px}
+  .stat-value{font-size:1.1rem}
+  .stat-sub{font-size:.7rem;margin-top:2px}
+  /* 图表 */
+  .charts-grid{grid-template-columns:1fr;gap:10px;margin-bottom:14px}
+  .chart-box{padding:12px;border-radius:8px}
+  .chart-title{font-size:.82rem;margin-bottom:10px}
+  .chart-box canvas{height:170px}
+  .chart-legend{gap:5px;margin-top:8px}.legend-item{font-size:.65rem}
+  /* 平台总览 */
+  .platform-grid{grid-template-columns:1fr;gap:8px}
+  .platform-card{padding:12px 14px;border-radius:8px}
+  .platform-card-head{margin-bottom:8px}
+  .platform-card-name{font-size:.88rem}
+  .platform-card-count{font-size:.7rem;padding:1px 6px}
+  .platform-card-grid{gap:6px}
+  .platform-card-stat .label{font-size:.65rem}.platform-card-stat .value{font-size:.8rem}
+  /* 平台标签 */
+  .platform-tabs{overflow-x:auto;flex-wrap:nowrap;padding:0 12px;margin:0 -12px 8px;gap:6px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .platform-tabs::-webkit-scrollbar{display:none}
+  .platform-tab{flex-shrink:0;padding:6px 12px;font-size:.78rem;border-radius:16px}
+  /* 汇总条 */
+  .summary-bar{overflow-x:auto;flex-wrap:nowrap;padding:8px 12px;margin:0 0 10px;border-radius:6px;gap:14px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .summary-bar::-webkit-scrollbar{display:none}
+  .summary-item{flex-shrink:0}
+  .summary-item .label{font-size:.65rem}.summary-item .value{font-size:.85rem}
+  /* 持仓：桌面隐藏、手机显示 */
+  .holdings-desktop{display:none!important}
+  .holdings-mobile{display:block!important;padding:0 12px}
+  /* 手机持仓卡片 */
+  .hcard{border-radius:10px;padding:14px;margin-bottom:10px}
+  .hcard-head{margin-bottom:10px}
+  .hcard-title{flex-wrap:wrap;gap:4px}
+  .hcard-name{font-size:.92rem}
+  .hcard-meta{margin-top:4px;gap:6px}
+  .hcard-code{font-size:.72rem}
+  .hcard-stats{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+  .hcard-stat .label{font-size:.65rem}.hcard-stat .value{font-size:.88rem;font-weight:500}
+  .hcard-actions{flex-wrap:wrap;gap:6px;padding-top:10px}
+  .hcard-actions .btn{font-size:.72rem;padding:5px 8px;min-height:34px;flex:1;text-align:center;justify-content:center;border-radius:5px}
+  /* 定投卡片 */
+  .dca-card{padding:14px 12px;border-radius:8px;margin-bottom:10px}
+  .dca-card-head{flex-wrap:wrap;gap:4px}
+  .dca-card-title{font-size:.88rem}
+  .dca-card-grid{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+  .dca-card-stat .label{font-size:.65rem}.dca-card-stat .value{font-size:.85rem}
+  .dca-card-freq{font-size:.7rem}
+  .dca-card-actions{flex-wrap:wrap;gap:6px;padding-top:8px}
+  .dca-card-actions .btn{font-size:.72rem;padding:5px 8px;min-height:34px;flex:1;text-align:center;justify-content:center;border-radius:5px}
+  /* 表头按钮区 */
+  .table-header{flex-direction:column;align-items:flex-start;gap:8px;padding:12px}
+  .table-header h3{font-size:.88rem}
+  .table-header > div{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;display:flex!important;flex-wrap:wrap;gap:6px}
+  /* 弹窗全屏 */
+  .modal-overlay{align-items:flex-end}
+  .modal{max-width:100%;max-height:92vh;border-radius:16px 16px 0 0;margin:0;width:100%}
+  .modal-head{padding:16px}.modal-head h2{font-size:1.05rem}
+  .modal-body{padding:16px 14px}
+  .form-row{margin-bottom:14px}
+  .form-row label{font-size:.78rem;margin-bottom:5px}
+  .form-row input,.form-row select,.form-row textarea{padding:12px;font-size:16px;border-radius:8px}
+  .form-row textarea{height:130px}
+  .form-grid{grid-template-columns:1fr;gap:10px}
+  .form-actions{padding-top:14px;margin-top:16px;gap:8px}
+  .form-actions .btn{flex:1;justify-content:center;font-size:.88rem;padding:11px;border-radius:6px}
+  .dca-toggle-row{padding:8px 0}
+  #dca-fields{padding-top:4px}
+  /* Toast */
+  #toast-container{top:auto;bottom:76px;right:8px;left:8px}
+  .toast{max-width:100%;border-radius:8px;font-size:.82rem;padding:10px 14px;margin:0}
+  /* 底部导航 */
+  .mobile-nav{
+    position:fixed;bottom:0;left:0;right:0;z-index:100;
+    background:rgba(14,14,22,.95);backdrop-filter:blur(20px);
+    border-top:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-around;
+    padding:4px 0;padding-bottom:calc(4px + env(safe-area-inset-bottom,0px));
+    box-shadow:0 -4px 24px rgba(0,0,0,.4)
+  }
+  .mobile-nav .nav-item{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+    padding:5px 4px;cursor:pointer;color:var(--text-3);transition:all .2s;
+    border:none;border-radius:0;font-size:.6rem;text-align:center;min-height:44px;justify-content:center
+  }
+  .mobile-nav .nav-item .dot{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:0;margin:0 auto;flex-shrink:0;display:none}
+  .mobile-nav .nav-item svg{margin:0 auto;flex-shrink:0;display:block}
+  .mobile-nav .nav-item.active{color:var(--gold);background:transparent}
+  .mobile-nav .nav-item.active .dot{opacity:1}
+  .mobile-nav .nav-item:hover{background:transparent;color:inherit}
+  /* 空状态 */
+  .empty-state{padding:36px 16px}
+  .empty-icon{width:58px;height:58px}.empty-icon svg{width:26px;height:26px}
+  .empty-state h2{font-size:1.05rem;margin-bottom:8px}
+  .empty-state p{font-size:.82rem;margin-bottom:16px}
+  /* 设置页面 */
+  .settings-section{padding:14px 12px;border-radius:8px;margin-bottom:10px}
+  .settings-section h3{font-size:.88rem;margin-bottom:10px}
+  .setting-item{padding:12px 0;gap:10px}
+  .setting-info{margin-right:0}
+  .setting-info .label{font-size:.85rem}
+  .setting-info .desc{font-size:.72rem;margin-top:2px}
+  .toggle{width:40px;height:22px;border-radius:11px;flex-shrink:0}
+  .toggle::after{width:16px;height:16px;top:3px;left:3px}
+  .toggle.on::after{transform:translateX(18px)}
+  /* 详情面板 */
+  .detail-panel{width:100vw}
+  .detail-head{padding:14px}
+  .detail-fund-name{font-size:1rem}
+  .detail-body{padding:12px}
+  .detail-nav-info{padding:12px;border-radius:8px;margin-bottom:12px}
+  .detail-stat-grid{gap:8px;margin-bottom:10px}
+  .detail-stat .detail-stat-label{font-size:.65rem}.detail-stat .detail-stat-value{font-size:.88rem}
+  .detail-stat .detail-stat-sub{font-size:.62rem}
+  .detail-stat-row{gap:6px;padding-top:8px}
+  .detail-stat2 .label{font-size:.62rem}.detail-stat2 .value{font-size:.78rem}
+  .detail-section-title{font-size:.75rem;margin-bottom:8px}
+  .detail-chart-wrap{padding:10px;border-radius:8px;margin-bottom:12px}
+  .detail-daily-list{max-height:240px}
+  .detail-daily-item{padding:9px 12px;border-radius:6px;margin-bottom:5px}
+  .detail-daily-date{font-size:.72rem;min-width:60px}
+  .detail-daily-amount{font-size:.82rem;min-width:70px}
+  .detail-daily-cumul{font-size:.72rem;min-width:62px}
+  /* 导出弹窗 */
+  #export-modal .modal-body,#paste-modal .modal-body{padding:14px 12px}
+  /* 诊断 */
+  .diag-item{padding:10px 12px;font-size:.82rem}
+  .diag-tip{padding:12px;font-size:.78rem}
+}
+@media(max-width:400px){
+  .stats-grid{grid-template-columns:1fr}
+  .hcard-stats{grid-template-columns:1fr 1fr}
+  .dca-card-grid{grid-template-columns:1fr 1fr}
+}
+@media(min-width:901px){
+  .mobile-nav{display:none!important}
+  .holdings-desktop{display:block}
+  .holdings-mobile{display:none}
+}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg-0)}::-webkit-scrollbar-thumb{background:var(--bg-4);border-radius:3px}
+
+/* ===== 基金详情侧滑面板 ===== */
+.detail-overlay{position:fixed;inset:0;z-index:250;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);display:flex;justify-content:flex-end;opacity:0;pointer-events:none;transition:opacity .3s}
+.detail-overlay.active{opacity:1;pointer-events:auto}
+.detail-panel{width:min(440px,100vw);height:100%;background:var(--bg-1);border-left:1px solid var(--border);transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow:hidden}
+.detail-overlay.active .detail-panel{transform:translateX(0)}
+.detail-head{display:flex;align-items:flex-start;justify-content:space-between;padding:20px 20px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+.detail-title-wrap{flex:1;min-width:0}
+.detail-fund-name{font-size:1.05rem;font-weight:600;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.detail-fund-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.detail-close{width:32px;height:32px;border-radius:50%;background:var(--bg-3);color:var(--text-3);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;margin-left:12px}
+.detail-close:hover{background:var(--bg-4);color:var(--text)}
+.detail-body{flex:1;overflow-y:auto;padding:20px}
+.detail-nav-info{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:20px}
+.detail-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.detail-stat .detail-stat-label{font-size:.7rem;color:var(--text-3);margin-bottom:3px}
+.detail-stat .detail-stat-value{font-family:var(--font-mono);font-size:.95rem;font-weight:500}
+.detail-stat .detail-stat-sub{font-size:.68rem;color:var(--text-3);margin-top:2px}
+.detail-stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding-top:12px;border-top:1px solid rgba(42,42,66,.4)}
+.detail-stat2 .label{font-size:.68rem;color:var(--text-3);margin-bottom:3px}
+.detail-stat2 .value{font-family:var(--font-mono);font-size:.82rem;font-weight:500}
+.detail-section-title{font-size:.8rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;margin-top:4px}
+.detail-chart-wrap{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:20px;position:relative}
+#detail-chart{display:block;width:100%}
+#detail-chart-loading{position:absolute;inset:0;background:var(--bg-2);display:flex;align-items:center;justify-content:center}
+.detail-daily-list{max-height:300px;overflow-y:auto}
+.detail-daily-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px}
+.detail-daily-date{font-family:var(--font-mono);font-size:.78rem;color:var(--text-3);min-width:72px}
+.detail-daily-amount{font-family:var(--font-mono);font-size:.88rem;font-weight:500;min-width:80px;text-align:right}
+.detail-daily-amount.up{color:var(--green)}.detail-daily-amount.down{color:var(--red)}
+.detail-daily-cumul{font-family:var(--font-mono);font-size:.78rem;color:var(--text-3);min-width:70px;text-align:right}
+.detail-empty{text-align:center;padding:40px 0;color:var(--text-3);font-size:.85rem}
+</style>
+</head>
+<body>
+
+<div id="api-banner"><div class="ab-icon" id="ab-icon"></div><div class="ab-text" id="ab-text"></div><button class="ab-close" onclick="dismissBanner()">&times;</button></div>
+
+<header id="app-header">
+  <div class="logo">FundVault <span>基金聚合管理</span></div>
+  <div class="header-actions"><span id="refresh-status"></span><button class="btn btn-outline" onclick="refreshAllNav()" id="btn-refresh">刷新净值</button><button class="btn btn-gold" onclick="showModal()">+ 添加</button></div>
+</header>
+
+<nav id="sidebar">
+  <div class="nav-item active" data-view="dashboard"><span class="dot"></span>总览</div>
+  <div class="nav-item" data-view="holdings"><span class="dot"></span>持仓明细</div>
+  <div class="nav-item" data-view="dca"><span class="dot"></span>定投管理</div>
+  <div class="nav-item" data-view="history"><span class="dot"></span>收益趋势</div>
+  <div class="nav-item" data-view="settings"><span class="dot"></span>设置</div>
+  <div class="sidebar-footer">FundVault v3.7</div>
+</nav>
+
+<nav class="mobile-nav">
+  <div class="nav-item active" data-view="dashboard"><span class="dot"></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>总览</span></div>
+  <div class="nav-item" data-view="holdings"><span class="dot"></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="3" y1="14" x2="21" y2="14"/><line x1="3" y1="18" x2="21" y2="18"/></svg><span>持仓</span></div>
+  <div class="nav-item" data-view="dca"><span class="dot"></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><polyline points="12 6 12 12 16 14"/></svg><span>定投</span></div>
+  <div class="nav-item" data-view="history"><span class="dot"></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>趋势</span></div>
+  <div class="nav-item" data-view="settings"><span class="dot"></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>设置</span></div>
+</nav>
+
+<div id="main">
+
+  <section class="view active" id="view-dashboard">
+    <h1 class="view-title">投资总览</h1>
+    <div class="stats-grid" id="stats-grid"></div>
+    <div class="charts-grid">
+      <div class="chart-box"><div class="chart-title">持仓分布</div><canvas id="allocationChart"></canvas><div class="chart-legend" id="allocationLegend"></div></div>
+      <div class="chart-box"><div class="chart-title">平台分布</div><canvas id="platformChart"></canvas><div class="chart-legend" id="platformLegend"></div></div>
+    </div>
+    <div id="platform-overview-section" style="display:none">
+      <h3 class="view-subtitle">分平台总览</h3>
+      <div class="platform-grid" id="platform-overview"></div>
+    </div>
+    <div id="dashboard-empty" class="empty-state" style="display:none">
+      <div class="empty-icon"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16l4-6 4 3 5-7"/></svg></div>
+      <h2>开始管理您的基金投资</h2><p>点击右上角「添加」，输入基金代码自动获取名称和净值。</p>
+      <button class="btn btn-gold" onclick="showModal()">+ 添加第一笔持仓</button>
+    </div>
+  </section>
+
+  <section class="view" id="view-holdings">
+    <h1 class="view-title">持仓明细</h1>
+    <div class="table-wrap" id="holdings-table-wrap">
+      <div class="table-header">
+        <h3>全部持仓</h3>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <span id="holdings-count" style="font-size:.8rem;color:var(--text-3)"></span>
+          <button class="btn btn-outline btn-sm" onclick="exportData()">导出文件</button>
+          <button class="btn btn-outline btn-sm" onclick="exportText()">导出文本</button>
+          <button class="btn btn-outline btn-sm" onclick="document.getElementById('importFile').click()">文件导入</button>
+          <button class="btn btn-outline btn-sm" onclick="showPasteModal()">粘贴导入</button>
+          <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+        </div>
+      </div>
+      <div class="platform-tabs" id="platform-tabs"></div>
+      <div class="summary-bar" id="holdings-summary"></div>
+      <!-- 桌面端：表格 -->
+      <div class="holdings-desktop" id="holdings-desktop-wrap">
+        <div style="overflow-x:auto"><table><thead><tr><th>基金代码</th><th>基金名称</th><th>份额</th><th>成本价</th><th>最新净值</th><th>市值</th><th>收益</th><th>昨日收益</th><th>平台</th><th>操作</th></tr></thead><tbody id="holdings-tbody"></tbody></table></div>
+      </div>
+      <!-- 手机端：卡片（独立于桌面端结构） -->
+      <div class="holdings-mobile" id="holdings-mobile-cards"></div>
+    </div>
+    <div id="holdings-empty" class="empty-state" style="display:none">
+      <div class="empty-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg></div>
+      <h2>暂无持仓</h2><p>添加基金持仓，开始追踪投资表现。</p>
+      <button class="btn btn-gold" onclick="showModal()">+ 添加持仓</button>
+    </div>
+  </section>
+
+  <section class="view" id="view-dca">
+    <h1 class="view-title">定投管理</h1>
+    <div class="stats-grid" id="dca-stats"></div>
+    <div id="dca-list"></div>
+    <div id="dca-empty" class="empty-state" style="display:none">
+      <div class="empty-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+      <h2>暂无定投计划</h2><p>在添加或编辑持仓时开启「定投策略」。长期未登录时自动补执行漏过的期数。</p>
+      <button class="btn btn-gold" onclick="showModal()">+ 添加定投</button>
+    </div>
+  </section>
+
+  <section class="view" id="view-history">
+    <h1 class="view-title">收益趋势</h1>
+    <div class="chart-box"><div class="chart-title">资产总值变化</div><canvas id="trendChart" style="height:320px"></canvas></div>
+    <div id="history-empty" class="empty-state" style="display:none">
+      <div class="empty-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+      <h2>暂无趋势数据</h2><p>刷新净值时自动记录快照，积累后趋势图自动展示。</p>
+    </div>
+  </section>
+
+  <section class="view" id="view-settings">
+    <h1 class="view-title">设置</h1>
+    <div class="settings-section">
+      <h3>连接诊断</h3>
+      <p style="font-size:.82rem;color:var(--text-3);margin-bottom:16px">测试 Functions 和各数据源连通性。</p>
+      <button class="btn btn-gold btn-sm" onclick="runDiagnostics()" id="btn-diag">开始诊断</button>
+      <div class="diag-grid" id="diag-results"></div>
+      <div class="diag-tip" id="diag-tips" style="display:none"></div>
+    </div>
+    <div class="settings-section">
+      <h3>配置</h3>
+      <div class="setting-item"><div class="setting-info"><div class="label">自动获取净值</div></div><div class="toggle on" id="toggle-autoFetch" onclick="toggleSetting('autoFetch')"></div></div>
+      <div class="setting-item"><div class="setting-info"><div class="label">加载时自动刷新</div></div><div class="toggle on" id="toggle-autoRefresh" onclick="toggleSetting('autoRefresh')"></div></div>
+      <div class="setting-item"><div class="setting-info"><div class="label">自动补执行定投</div></div><div class="toggle on" id="toggle-autoDca" onclick="toggleSetting('autoDca')"></div></div>
+    </div>
+    <div class="settings-section">
+      <h3>数据管理</h3>
+      <div class="setting-item"><div class="setting-info"><div class="label">导出数据</div><div class="desc">文件适合电脑备份，文本适合发到手机粘贴导入</div></div><div style="display:flex;gap:6px"><button class="btn btn-outline btn-sm" onclick="exportData()">文件</button><button class="btn btn-outline btn-sm" onclick="exportText()">文本</button></div></div>
+      <div class="setting-item"><div class="setting-info"><div class="label">导入数据</div><div class="desc">电脑用文件导入，手机用粘贴导入</div></div><div style="display:flex;gap:6px"><button class="btn btn-outline btn-sm" onclick="document.getElementById('importFile').click()">文件</button><button class="btn btn-outline btn-sm" onclick="showPasteModal()">粘贴</button></div></div>
+      <div class="setting-item"><div class="setting-info"><div class="label">清空所有数据</div><div class="desc">不可撤销</div></div><button class="btn btn-danger btn-sm" onclick="clearAllData()">清空</button></div>
+    </div>
+    <div class="settings-section">
+      <h3>关于</h3>
+      <div style="color:var(--text-2);font-size:.88rem;line-height:1.8">
+        <p>FundVault v3.7</p>
+        <p>昨日收益 · 分平台昨日收益 · 基金类型标签 · 基金详情面板 · 定投支持申购费率 · 自动补执行</p>
+        <p style="margin-top:12px;color:var(--text-3)">所有数据仅存浏览器本地。</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ===== 基金详情侧滑面板 ===== -->
+<div class="detail-overlay" id="detail-overlay" onclick="closeDetail(event)">
+  <div class="detail-panel" id="detail-panel">
+    <div class="detail-head">
+      <div class="detail-title-wrap">
+        <div class="detail-fund-name" id="detail-name">--</div>
+        <div class="detail-fund-meta"><span class="tag" id="detail-fundtype"></span> <span id="detail-platform" style="font-size:.82rem;color:var(--text-3)"></span></div>
+      </div>
+      <button class="detail-close" onclick="closeDetailPanel()">&times;</button>
+    </div>
+    <div class="detail-body">
+      <div class="detail-nav-info">
+        <div class="detail-stat-grid">
+          <div class="detail-stat"><div class="detail-stat-label">最新净值</div><div class="detail-stat-value" id="detail-nav">--</div><div class="detail-stat-sub" id="detail-navdate">--</div></div>
+          <div class="detail-stat"><div class="detail-stat-label">昨日净值</div><div class="detail-stat-value" id="detail-prevnav">--</div><div class="detail-stat-sub" id="detail-prevnavdate">--</div></div>
+          <div class="detail-stat"><div class="detail-stat-label">昨日收益</div><div class="detail-stat-value" id="detail-yprofit" style="font-size:1.1rem">--</div><div class="detail-stat-sub" id="detail-yprofit-rate">--</div></div>
+          <div class="detail-stat"><div class="detail-stat-label">持仓收益</div><div class="detail-stat-value" id="detail-profit">--</div><div class="detail-stat-sub" id="detail-profit-rate">--</div></div>
+        </div>
+        <div class="detail-stat-row">
+          <div class="detail-stat2"><div class="label">持有份额</div><div class="value" id="detail-shares">--</div></div>
+          <div class="detail-stat2"><div class="label">成本价</div><div class="value" id="detail-cost">--</div></div>
+          <div class="detail-stat2"><div class="label">总成本</div><div class="value" id="detail-totalcost">--</div></div>
+          <div class="detail-stat2"><div class="label">市值</div><div class="value" id="detail-value">--</div></div>
+        </div>
+      </div>
+      <div class="detail-section-title">收益走势（近15日持有收益）</div>
+      <div class="detail-chart-wrap"><canvas id="detail-chart" style="height:180px;width:100%"></canvas><div id="detail-chart-loading" style="text-align:center;padding:60px 0;color:var(--text-3);font-size:.85rem">加载中...</div></div>
+      <div class="detail-section-title">每日收益明细</div>
+      <div class="detail-daily-list" id="detail-daily-list"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-head"><h2 id="modal-title">添加持仓</h2><button class="modal-close" onclick="hideModal()">&times;</button></div>
+    <div class="modal-body">
+      <form id="holding-form" onsubmit="saveHolding(event)">
+        <input type="hidden" id="f-id">
+        <div class="form-row"><label>基金代码 *</label><input type="text" id="f-code" placeholder="输入6位基金代码" required maxlength="6" inputmode="numeric" oninput="onCodeInput(this.value)"><div class="fund-hint" id="fund-hint"></div></div>
+        <div class="form-row"><label>基金名称</label><input type="text" id="f-name" placeholder="自动获取或手动输入"></div>
+        <div class="form-grid">
+          <div class="form-row"><label>持有份额 *</label><input type="number" id="f-shares" placeholder="0.00" step="0.01" required inputmode="decimal"></div>
+          <div class="form-row"><label>成本价 *</label><input type="number" id="f-cost" placeholder="0.0000" step="0.0001" required inputmode="decimal"></div>
+        </div>
+        <div class="form-grid">
+          <div class="form-row"><label>购入日期</label><input type="date" id="f-date"></div>
+          <div class="form-row"><label>购买平台</label><input type="text" id="f-platform" list="platform-list" placeholder="输入或选择" value="天天基金"><datalist id="platform-list"><option value="天天基金"><option value="支付宝"><option value="微信理财通"><option value="蛋卷基金"><option value="京东金融"><option value="同花顺"><option value="蚂蚁财富"><option value="招商银行"><option value="工商银行"><option value="雪球"></datalist></div>
+        </div>
+        <div class="form-row"><label>最新净值（可选）</label><input type="number" id="f-manual-nav" placeholder="留空则自动获取" step="0.0001" inputmode="decimal"></div>
+        <hr class="form-divider">
+        <div class="dca-toggle-row"><label style="font-size:.88rem;font-weight:500;color:var(--text)">开启定投策略</label><div class="toggle toggle-sm" id="f-dca-toggle" onclick="toggleDcaFields()"></div></div>
+        <div id="dca-fields" style="display:none">
+          <div class="form-grid">
+            <div class="form-row"><label>定投金额（元）</label><input type="number" id="f-dca-amount" placeholder="1000" step="100" min="1" inputmode="decimal"></div>
+            <div class="form-row"><label>定投周期</label><select id="f-dca-freq"><option value="monthly">每月</option><option value="biweekly">每两周</option><option value="weekly">每周</option></select></div>
+          </div>
+          <div class="form-grid">
+            <div class="form-row"><label>定投日</label><input type="number" id="f-dca-day" placeholder="15" min="1" max="31" inputmode="numeric"><div class="form-hint">每月几号 / 每周几（1=周一）</div></div>
+            <div class="form-row"><label>申购费率 (%)</label><input type="number" id="f-dca-fee" placeholder="0" step="0.01" min="0" max="5" value="0" inputmode="decimal"><div class="form-hint">C类0% / A类0.10-0.15%</div></div>
+          </div>
+          <div class="form-row"><label>开始日期</label><input type="date" id="f-dca-start"></div>
+        </div>
+        <div class="form-actions"><button type="button" class="btn btn-outline" onclick="hideModal()">取消</button><button type="submit" class="btn btn-gold">保存</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="export-modal">
+  <div class="modal">
+    <div class="modal-head"><h2>导出文本</h2><button class="modal-close" onclick="hideExportModal()">&times;</button></div>
+    <div class="modal-body">
+      <div class="form-row"><label>长按复制下方内容，发送到手机后用「粘贴导入」恢复</label><textarea id="export-output" readonly></textarea></div>
+      <div style="font-size:.75rem;color:var(--text-3);margin-bottom:16px">复制后可粘贴到微信聊天、备忘录等任意位置保存。需要恢复时用「粘贴导入」即可。</div>
+      <div class="form-actions"><button class="btn btn-gold" onclick="copyExportText()">复制到剪贴板</button><button class="btn btn-outline" onclick="hideExportModal()">关闭</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="paste-modal">
+  <div class="modal">
+    <div class="modal-head"><h2>粘贴导入</h2><button class="modal-close" onclick="hidePasteModal()">&times;</button></div>
+    <div class="modal-body">
+      <div class="form-row"><label>粘贴 JSON 数据</label><textarea id="paste-input" placeholder='将导出的 JSON 粘贴到这里...'></textarea></div>
+      <div style="font-size:.75rem;color:var(--text-3);margin-bottom:16px">在电脑上导出 JSON 文件，复制内容，粘贴到此处即可导入。适用于微信内浏览器等不支持文件选择的场景。</div>
+      <div class="form-actions"><button class="btn btn-outline" onclick="hidePasteModal()">取消</button><button class="btn btn-gold" onclick="importFromPaste()">导入</button></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+var state={holdings:[],snapshots:[],settings:{autoFetch:true,autoRefresh:true,autoDca:true},currentView:'dashboard',apiOk:false,selectedPlatform:'全部'};
+var COLORS=['#c8a84e','#50c878','#5090e8','#e85050','#a85de8','#e89850','#50d8d8','#e850a0','#80c850','#5080e8'];
+var WEEKDAYS=['','周一','周二','周三','周四','周五','周六','周日'];
+var FREQ_MAP={'monthly':'每月','biweekly':'每两周','weekly':'每周'};
+
+var nameCache={};
+function loadNameCache(){try{nameCache=JSON.parse(localStorage.getItem('fv_nameCache')||'{}')}catch(e){nameCache={}}}
+function cacheName(c,n){if(c&&n&&n.length>1){nameCache[c]=n;try{localStorage.setItem('fv_nameCache',JSON.stringify(nameCache))}catch(e){}}}
+
+function loadState(){try{var h=localStorage.getItem('fv_holdings'),s=localStorage.getItem('fv_snapshots'),c=localStorage.getItem('fv_settings');if(h)state.holdings=JSON.parse(h);if(s)state.snapshots=JSON.parse(s);if(c)state.settings={...state.settings,...JSON.parse(c)};loadNameCache()}catch(e){}}
+function saveState(){try{localStorage.setItem('fv_holdings',JSON.stringify(state.holdings));localStorage.setItem('fv_snapshots',JSON.stringify(state.snapshots));localStorage.setItem('fv_settings',JSON.stringify(state.settings))}catch(e){showToast('存储空间不足','error')}}
+
+function apiGet(url){var ctrl=new AbortController();var timer=setTimeout(function(){ctrl.abort()},15000);return fetch(url,{signal:ctrl.signal}).then(function(r){clearTimeout(timer);if(!r.ok)return r.json().catch(function(){return{}}).then(function(b){return{ok:false,status:r.status,body:b}});return r.json().then(function(b){return{ok:true,status:r.status,body:b}})}).catch(function(e){clearTimeout(timer);throw e})}
+
+async function checkApi(){var b=document.getElementById('api-banner'),ic=document.getElementById('ab-icon'),tx=document.getElementById('ab-text');try{var res=await apiGet('/api/ping');if(res.ok&&res.body&&res.body.status==='ok'){state.apiOk=true;ic.textContent='\u2713';tx.innerHTML='<strong style="color:var(--green)">API \u5df2\u8fde\u63a5</strong>';b.className='ok show';setTimeout(function(){b.classList.remove('show')},3000);return true}throw new Error('')}catch(e){state.apiOk=false;ic.textContent='\u26a0';tx.innerHTML='<strong style="color:var(--red)">API \u672a\u8fde\u63a5</strong>';b.className='err show';return false}}
+function dismissBanner(){document.getElementById('api-banner').classList.remove('show');document.body.classList.remove('has-banner')}
+
+function applyNav(h,info){if(!info||!info.nav)return false;h.currentNav=info.nav;h.navDate=info.navDate||'';h.navSource=info.source||'API';h.prevNav=info.prevNav||null;h.prevNavDate=info.prevNavDate||'';h.fundType=info.fundType||h.fundType||'';if(info.name&&info.name.length>1){h.name=info.name;cacheName(h.code,info.name)}h.lastUpdated=new Date().toISOString();h.currentValue=h.currentNav*h.shares;h.profit=h.currentValue-h.totalCost;h.profitRate=h.totalCost>0?(h.profit/h.totalCost*100):0;if(h.prevNav&&h.prevNav>0){h.yesterdayProfit=h.shares*(h.currentNav-h.prevNav);h.yesterdayProfitRate=h.prevNav>0?(h.currentNav-h.prevNav)/h.prevNav*100:0}else{h.yesterdayProfit=0;h.yesterdayProfitRate=0}return true}
+
+async function refreshAllNav(){if(!state.holdings.length){showToast('\u6682\u65e0\u6301\u4ed3','info');return}if(!state.apiOk){showToast('API\u672a\u8fde\u63a5','error');return}var btn=document.getElementById('btn-refresh'),st=document.getElementById('refresh-status');btn.disabled=true;btn.textContent='\u83b7\u53d6\u4e2d...';try{st.textContent='\u6279\u91cf\u83b7\u53d6...';var res=await apiGet('/api/funds?codes='+state.holdings.map(function(h){return h.code}).join(','));if(res.ok&&res.body){var ok=0;state.holdings.forEach(function(h){if(res.body[h.code]&&applyNav(h,res.body[h.code]))ok++});saveState();saveSnapshot();btn.disabled=false;btn.textContent='\u5237\u65b0\u51c0\u503c';st.textContent='\u5df2\u66f4\u65b0 '+new Date().toLocaleTimeString('zh-CN');showToast('\u83b7\u53d6\u6210\u529f ('+ok+'/'+state.holdings.length+')',ok===state.holdings.length?'success':'warn');renderCurrentView();return}throw new Error('')}catch(e){}var ok=0,fail=0;for(var i=0;i<state.holdings.length;i++){st.textContent=(i+1)+'/'+state.holdings.length;try{var r=await apiGet('/api/fund?code='+state.holdings[i].code);if(r.ok&&r.body&&applyNav(state.holdings[i],r.body))ok++;else fail++}catch(e){fail++}renderCurrentView();if(i<state.holdings.length-1)await new Promise(function(r){setTimeout(r,300)})}saveState();saveSnapshot();btn.disabled=false;btn.textContent='\u5237\u65b0\u51c0\u503c';st.textContent='\u5df2\u66f4\u65b0';showToast(fail>0?ok+'\u53ea\u6210\u529f\uff0c'+fail+'\u53ea\u5931\u8d25':'\u5168\u90e8\u6210\u529f('+ok+')',fail>0?'warn':'success')}
+
+function getMissedDcaDates(dca){if(!dca||!dca.enabled)return[];var lastDate=dca.startDate;if(!lastDate)return[];if(dca.history&&dca.history.length)lastDate=dca.history[dca.history.length-1].date;var dates=[],last=new Date(lastDate+'T00:00:00'),today=new Date();today.setHours(0,0,0,0);var cur=new Date(last);for(var safety=0;safety<200;safety++){var next;if(dca.frequency==='monthly'){next=new Date(cur.getFullYear(),cur.getMonth()+1,dca.day);if(next.getDate()!==dca.day)next=new Date(cur.getFullYear(),cur.getMonth()+2,0)}else if(dca.frequency==='biweekly'){next=new Date(cur);next.setDate(next.getDate()+14)}else{next=new Date(cur);var td=dca.day||1,cd=next.getDay()||7,diff=td-cd;if(diff<=0)diff+=7;next.setDate(next.getDate()+diff)}if(next>today)break;dates.push(next.toISOString().slice(0,10));cur=next}return dates}
+function findNav(navMap,targetDate){if(navMap[targetDate])return navMap[targetDate];var d=new Date(targetDate+'T00:00:00');for(var i=1;i<=7;i++){d.setDate(d.getDate()-1);var ds=d.toISOString().slice(0,10);if(navMap[ds])return navMap[ds]}return null}
+function doDcaExecution(h,nav,dateStr,isAuto){var amount=h.dca.amount,feeRate=h.dca.feeRate||0,fee=amount*feeRate/100,actualAmount=amount-fee,newShares=actualAmount/nav;h.shares+=newShares;h.totalCost+=amount;h.costPerShare=h.totalCost/h.shares;if(h.currentNav||!isAuto){h.currentValue=(h.currentNav||nav)*h.shares;h.profit=h.currentValue-h.totalCost;h.profitRate=h.totalCost>0?(h.profit/h.totalCost*100):0}if(!h.dca.history)h.dca.history=[];h.dca.history.push({date:dateStr,amount:amount,fee:fee,nav:nav,shares:newShares,auto:isAuto});return{fee:fee,shares:newShares}}
+function executeDca(id){var h=state.holdings.find(function(x){return x.id===id});if(!h||!h.dca||!h.dca.enabled)return;var nav=h.currentNav;if(!nav){var input=prompt('\u8bf7\u8f93\u5165\u51c0\u503c\uff1a');if(!input)return;nav=parseFloat(input);if(isNaN(nav)||nav<=0){showToast('\u51c0\u503c\u65e0\u6548','error');return}}var r=doDcaExecution(h,nav,new Date().toISOString().slice(0,10),false);saveState();saveSnapshot();renderCurrentView();var ft=r.fee>0?' \u00b7 \u8d39\u7528 \u00a5'+r.fee.toFixed(2):'';showToast('\u5b9a\u6295\u5df2\u6267\u884c\uff1a\u00a5'+h.dca.amount+ft+' \u00b7 '+r.shares.toFixed(2)+'\u4efd','success')}
+async function autoExecuteDcas(){if(!state.settings.autoDca)return 0;var dcas=state.holdings.filter(function(h){return h.dca&&h.dca.enabled});if(!dcas.length)return 0;var totalAuto=0;for(var i=0;i<dcas.length;i++){var h=dcas[i],missed=getMissedDcaDates(h.dca);if(!missed.length)continue;var daysNeeded=Math.ceil((new Date()-new Date((h.dca.history&&h.dca.history.length?h.dca.history[h.dca.history.length-1].date:h.dca.startDate)+'T00:00:00'))/864e5)+10;try{var res=await apiGet('/api/fund/history?code='+h.code+'&size='+Math.max(daysNeeded,60));if(!res.ok||!res.body)continue;for(var j=0;j<missed.length;j++){var nav=findNav(res.body,missed[j]);if(!nav)continue;doDcaExecution(h,nav,missed[j],true);totalAuto++}}catch(e){}}if(totalAuto>0){saveState();saveSnapshot()}return totalAuto}
+function toggleDcaHistory(id){var el=document.getElementById('dca-hist-'+id);if(el)el.classList.toggle('show')}
+function closeDca(id){var h=state.holdings.find(function(x){return x.id===id});if(!h||!h.dca)return;if(!confirm('\u786e\u5b9a\u5173\u95ed\u5b9a\u6295\uff1f'))return;h.dca.enabled=false;saveState();renderCurrentView();showToast('\u5b9a\u6295\u5df2\u5173\u95ed','info')}
+
+async function runDiagnostics(){var c=document.getElementById('diag-results'),tips=document.getElementById('diag-tips'),btn=document.getElementById('btn-diag');btn.disabled=true;btn.textContent='\u8bca\u65ad\u4e2d...';c.innerHTML='';tips.style.display='none';c.innerHTML='<div class="diag-item" id="dg-ping"><span class="diag-dot pending"></span><span class="diag-name">Ping</span><span class="diag-detail">\u6d4b\u8bd5\u4e2d...</span></div>';var pingOk=false;try{var t0=Date.now(),res=await apiGet('/api/ping'),ms=Date.now()-t0;if(res.ok){document.querySelector('#dg-ping .diag-dot').className='diag-dot ok';document.querySelector('#dg-ping .diag-detail').textContent='200 \u00b7 '+ms+'ms';pingOk=true}else{document.querySelector('#dg-ping .diag-dot').className='diag-dot fail'}}catch(e){document.querySelector('#dg-ping .diag-dot').className='diag-dot fail';document.querySelector('#dg-ping .diag-detail').textContent=e.message}if(!pingOk){tips.innerHTML='<strong style="color:var(--red)">Functions \u672a\u8fde\u63a5</strong>';tips.style.display='block';btn.disabled=false;btn.textContent='\u91cd\u65b0\u8bca\u65ad';state.apiOk=false;return}c.innerHTML+='<div class="diag-item" id="dg-diag"><span class="diag-dot pending"></span><span class="diag-name">\u9010\u6e90\u68c0\u6d4b</span><span class="diag-detail">\u6d4b\u8bd5\u4e2d...</span></div>';try{var resp=await apiGet('/api/diag?code=110022');var el=document.getElementById('dg-diag');if(el)el.remove();if(resp.body&&resp.body.results){resp.body.results.forEach(function(src){var d=document.createElement('div');d.className='diag-item';if(src.ok)d.innerHTML='<span class="diag-dot ok"></span><span class="diag-name">'+src.name+'</span><span class="diag-detail">'+src.ms+'ms \u00b7 '+src.data.nav.toFixed(4)+'</span>';else d.innerHTML='<span class="diag-dot fail"></span><span class="diag-name">'+src.name+'</span><span class="diag-detail">'+(src.error||'\u5931\u8d25')+' \u00b7 '+src.ms+'ms</span>';c.appendChild(d)});var okSrc=resp.body.results.filter(function(s){return s.ok}),h='';if(okSrc.length>0){h+='<strong style="color:var(--green)">\u2713 '+okSrc.length+' \u4e2a\u6e90\u53ef\u7528</strong>';state.apiOk=true}else{h+='<strong style="color:var(--red)">\u5168\u90e8\u4e0d\u53ef\u7528</strong>';state.apiOk=false}tips.innerHTML=h;tips.style.display='block'}}catch(e){var el2=document.getElementById('dg-diag');if(el2){el2.querySelector('.diag-dot').className='diag-dot fail';el2.querySelector('.diag-detail').textContent=e.message}}btn.disabled=false;btn.textContent='\u91cd\u65b0\u8bca\u65ad'}
+
+function saveSnapshot(){if(!state.holdings.length)return;var today=new Date().toISOString().slice(0,10);var tv=state.holdings.reduce(function(s,h){return s+(h.currentValue||0)},0),tc=state.holdings.reduce(function(s,h){return s+(h.totalCost||0)},0);var idx=state.snapshots.findIndex(function(s){return s.date===today});var snap={date:today,totalValue:tv,totalCost:tc,profit:tv-tc};if(idx>=0)state.snapshots[idx]=snap;else state.snapshots.push(snap);if(state.snapshots.length>365)state.snapshots=state.snapshots.slice(-365);saveState()}
+
+function getSummary(){var tv=state.holdings.reduce(function(s,h){return s+(h.currentValue||h.totalCost||0)},0),tc=state.holdings.reduce(function(s,h){return s+(h.totalCost||0)},0),p=tv-tc,d=0,yp=state.holdings.reduce(function(s,h){return s+(h.yesterdayProfit||0)},0);if(state.snapshots.length>=2)d=state.snapshots[state.snapshots.length-1].totalValue-state.snapshots[state.snapshots.length-2].totalValue;return{totalValue:tv,totalCost:tc,profit:p,profitRate:tc>0?p/tc*100:0,dailyChange:d,yesterdayProfit:yp,count:state.holdings.length}}
+function getPlatforms(){var m={};state.holdings.forEach(function(h){var p=h.platform||'\u5176\u4ed6';if(!m[p])m[p]={name:p,count:0,totalValue:0,totalCost:0,yesterdayProfit:0};m[p].count++;m[p].totalCost+=h.totalCost||0;m[p].totalValue+=(h.currentValue||h.totalCost||0);m[p].yesterdayProfit+=(h.yesterdayProfit||0)});return Object.keys(m).map(function(k){var p=m[k];p.profit=p.totalValue-p.totalCost;p.profitRate=p.totalCost>0?p.profit/p.totalCost*100:0;return p})}
+function getPlatformNames(){var s={};state.holdings.forEach(function(h){s[h.platform||'\u5176\u4ed6']=true});return Object.keys(s)}
+function getFilteredHoldings(){if(state.selectedPlatform==='\u5168\u90e8')return state.holdings;return state.holdings.filter(function(h){return(h.platform||'\u5176\u4ed6')===state.selectedPlatform})}
+function getFilteredSummary(){var fh=getFilteredHoldings();var tv=fh.reduce(function(s,h){return s+(h.currentValue||h.totalCost||0)},0),tc=fh.reduce(function(s,h){return s+(h.totalCost||0)},0),yp=fh.reduce(function(s,h){return s+(h.yesterdayProfit||0)},0);return{count:fh.length,totalValue:tv,totalCost:tc,profit:tv-tc,profitRate:tc>0?(tv-tc)/tc*100:0,yesterdayProfit:yp}}
+function getDcaHoldings(){return state.holdings.filter(function(h){return h.dca&&h.dca.enabled})}
+function getDcaSummary(){var dcas=getDcaHoldings();if(!dcas.length)return{count:0,totalInvested:0,totalFees:0,totalValue:0,profit:0};var ti=0,tf=0,tv=0;dcas.forEach(function(h){ti+=h.totalCost||0;tv+=(h.currentValue||h.totalCost||0);if(h.dca&&h.dca.history)h.dca.history.forEach(function(r){tf+=r.fee||0})});return{count:dcas.length,totalInvested:ti,totalFees:tf,totalValue:tv,profit:tv-ti,profitRate:ti>0?(tv-ti)/ti*100:0}}
+function getDcaAvgCost(h){if(!h.dca||!h.dca.history||!h.dca.history.length)return h.costPerShare||0;var ts=0,ta=0;h.dca.history.forEach(function(r){ts+=r.shares;ta+=r.amount});return ts>0?ta/ts:0}
+function getDcaTotalFees(h){if(!h.dca||!h.dca.history)return 0;return h.dca.history.reduce(function(s,r){return s+(r.fee||0)},0)}
+function getFreqLabel(dca){if(!dca)return'';var s=FREQ_MAP[dca.frequency]||dca.frequency;if(dca.frequency==='monthly')return s+dca.day+'号';return s+WEEKDAYS[dca.day||1]}
+function getNextDcaDate(dca){if(!dca)return'';var now=new Date(),next;if(dca.frequency==='monthly'){next=new Date(now.getFullYear(),now.getMonth(),dca.day);if(next<=now)next=new Date(now.getFullYear(),now.getMonth()+1,dca.day)}else{next=new Date(now);var cd=next.getDay()||7,df=(dca.day||1)-cd;if(df<=0)df+=7;next.setDate(next.getDate()+df)}return next.toISOString().slice(0,10)}
+function getAlloc(){return state.holdings.map(function(h){return{label:h.name||h.code,value:h.currentValue||h.totalCost||0}}).filter(function(d){return d.value>0})}
+function uniqueP(){var s={};state.holdings.forEach(function(h){s[h.platform||'\u5176\u4ed6']=true});return Object.keys(s).length}
+
+var VT='#e8e4dc',VT3='#5c5850';
+function drawPie(id,data,lid){var cv=document.getElementById(id);if(!cv)return;var ctx=cv.getContext('2d'),dpr=window.devicePixelRatio||1,rc=cv.getBoundingClientRect();cv.width=rc.width*dpr;cv.height=rc.height*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,rc.width,rc.height);if(!data||!data.length){ctx.fillStyle=VT3;ctx.font='13px sans-serif';ctx.textAlign='center';ctx.fillText('\u6682\u65e0\u6570\u636e',rc.width/2,rc.height/2);return}var total=data.reduce(function(s,d){return s+d.value},0),cx=rc.width/2,cy=rc.height/2,r=Math.min(cx,cy)-30,ir=r*.52,sa=-Math.PI/2;data.forEach(function(seg,i){var sl=(seg.value/total)*Math.PI*2;ctx.beginPath();ctx.arc(cx,cy,r,sa,sa+sl);ctx.arc(cx,cy,ir,sa+sl,sa,true);ctx.closePath();ctx.fillStyle=COLORS[i%COLORS.length];ctx.fill();if(sl>.5){var md=sa+sl/2,lr=(r+ir)/2;ctx.fillStyle='#fff';ctx.font='500 11px "DM Mono",monospace';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText((seg.value/total*100).toFixed(1)+'%',cx+Math.cos(md)*lr,cy+Math.sin(md)*lr)}sa+=sl});ctx.fillStyle=VT;ctx.font='600 11px "DM Mono",monospace';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(fmtM(total),cx,cy-6);ctx.fillStyle=VT3;ctx.font='10px sans-serif';ctx.fillText('\u603b\u8ba1',cx,cy+10);var lg=document.getElementById(lid);if(lg)lg.innerHTML=data.map(function(d,i){return'<div class="legend-item"><span class="legend-dot" style="background:'+COLORS[i%COLORS.length]+'"></span>'+esc(trunc(d.label,8))+' '+fmtM(d.value)+'</div>'}).join('')}
+function drawLine(id,snaps){var cv=document.getElementById(id);if(!cv)return;var ctx=cv.getContext('2d'),dpr=window.devicePixelRatio||1,rc=cv.getBoundingClientRect();cv.width=rc.width*dpr;cv.height=rc.height*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,rc.width,rc.height);if(!snaps||snaps.length<2){ctx.fillStyle=VT3;ctx.font='13px sans-serif';ctx.textAlign='center';ctx.fillText('\u81f3\u5c11\u9700\u89812\u5929\u6570\u636e',rc.width/2,rc.height/2);return}var pd={t:24,r:24,b:44,l:70},w=rc.width-pd.l-pd.r,h=rc.height-pd.t-pd.b;var vals=snaps.map(function(s){return s.totalValue}),mn=Math.min.apply(null,vals)*.995,mx=Math.max.apply(null,vals)*1.005,rng=mx-mn||1;ctx.strokeStyle='rgba(42,42,66,.5)';ctx.lineWidth=.5;for(var i=0;i<=4;i++){var y=pd.t+(h/4)*i;ctx.beginPath();ctx.moveTo(pd.l,y);ctx.lineTo(pd.l+w,y);ctx.stroke();ctx.fillStyle=VT3;ctx.font='10px "DM Mono",monospace';ctx.textAlign='right';ctx.textBaseline='middle';ctx.fillText(fmtM(mx-(rng/4)*i),pd.l-8,y)}var step=Math.max(1,Math.floor(snaps.length/6));snaps.forEach(function(s,idx){if(idx%step===0||idx===snaps.length-1){ctx.fillStyle=VT3;ctx.font='10px "DM Mono",monospace';ctx.textAlign='center';ctx.fillText(s.date.slice(5),pd.l+(idx/(snaps.length-1))*w,pd.t+h+20)}});var gr=ctx.createLinearGradient(0,pd.t,0,pd.t+h);gr.addColorStop(0,'rgba(200,168,78,.2)');gr.addColorStop(1,'rgba(200,168,78,0)');ctx.beginPath();snaps.forEach(function(s,idx){var x=pd.l+(idx/(snaps.length-1))*w,yy=pd.t+(1-(s.totalValue-mn)/rng)*h;idx===0?ctx.moveTo(x,yy):ctx.lineTo(x,yy)});ctx.lineTo(pd.l+w,pd.t+h);ctx.lineTo(pd.l,pd.t+h);ctx.closePath();ctx.fillStyle=gr;ctx.fill();ctx.strokeStyle='#c8a84e';ctx.lineWidth=2;ctx.lineJoin='round';ctx.beginPath();snaps.forEach(function(s,idx){var x=pd.l+(idx/(snaps.length-1))*w,yy=pd.t+(1-(s.totalValue-mn)/rng)*h;idx===0?ctx.moveTo(x,yy):ctx.lineTo(x,yy)});ctx.stroke();var last=snaps[snaps.length-1],lx=pd.l+w,ly=pd.t+(1-(last.totalValue-mn)/rng)*h;ctx.beginPath();ctx.arc(lx,ly,4,0,Math.PI*2);ctx.fillStyle='#c8a84e';ctx.fill();ctx.beginPath();ctx.arc(lx,ly,7,0,Math.PI*2);ctx.strokeStyle='rgba(200,168,78,.3)';ctx.lineWidth=2;ctx.stroke()}
+
+function switchView(v){state.currentView=v;document.querySelectorAll('.view').forEach(function(x){x.classList.remove('active')});document.getElementById('view-'+v).classList.add('active');document.querySelectorAll('.nav-item').forEach(function(n){n.classList.toggle('active',n.dataset.view===v)});renderCurrentView()}
+function renderCurrentView(){({dashboard:renderDashboard,holdings:renderHoldings,dca:renderDca,history:renderHistory,settings:renderSettings})[state.currentView]()}
+
+function renderDashboard(){var empty=!state.holdings.length;document.getElementById('dashboard-empty').style.display=empty?'block':'none';document.querySelector('#view-dashboard .stats-grid').style.display=empty?'none':'';document.querySelector('#view-dashboard .charts-grid').style.display=empty?'none':'';document.getElementById('platform-overview-section').style.display=empty?'none':'block';if(empty)return;var s=getSummary(),pc=s.profit>=0?'up':'down',ps=s.profit>=0?'+':'',dc=s.dailyChange>0?'up':s.dailyChange<0?'down':'flat',ds=s.dailyChange>0?'+':'';document.getElementById('stats-grid').innerHTML='<div class="stat-card"><div class="stat-label">\u603b\u8d44\u4ea7</div><div class="stat-value">'+fmtM(s.totalValue)+'</div><div class="stat-sub flat">\u603b\u6210\u672c '+fmtM(s.totalCost)+'</div></div><div class="stat-card"><div class="stat-label">\u603b\u6536\u76ca</div><div class="stat-value" style="color:'+(s.profit>=0?'var(--green)':'var(--red)')+'">'+ps+fmtM(s.profit)+'</div><div class="stat-sub '+pc+'">'+ps+s.profitRate.toFixed(2)+'%</div></div><div class="stat-card"><div class="stat-label">\u6628\u65e5\u6536\u76ca</div><div class="stat-value" style="color:'+(s.yesterdayProfit>=0?'var(--green)':'var(--red)')+'">'+(s.yesterdayProfit>=0?'+':'-')+fmtM(Math.abs(s.yesterdayProfit))+'</div><div class="stat-sub flat">'+(s.yesterdayProfit>=0?'\u6bcf\u4efd\u76d8\u8d22':'\u6bcf\u4efd\u8d22\u6355')+'</div></div><div class="stat-card"><div class="stat-label">\u57fa\u91d1\u6570</div><div class="stat-value">'+s.count+'</div><div class="stat-sub flat">'+uniqueP()+' \u4e2a\u5e73\u53f0</div></div>';drawPie('allocationChart',getAlloc(),'allocationLegend');drawPie('platformChart',getPlatforms().map(function(p){return{label:p.name,value:p.totalValue}}),'platformLegend');var plats=getPlatforms();document.getElementById('platform-overview').innerHTML=plats.map(function(p){var pc2=p.profit>=0?'up':'down',ps2=p.profit>=0?'+':'';return'<div class="platform-card" onclick="goToPlatform(\''+esc(p.name)+'\')"><div class="platform-card-head"><span class="platform-card-name">'+esc(p.name)+'</span><span class="platform-card-count">'+p.count+' \u53ea</span></div><div class="platform-card-grid"><div class="platform-card-stat"><div class="label">\u5e02\u503c</div><div class="value">'+fmtM(p.totalValue)+'</div></div><div class="platform-card-stat"><div class="label">\u6210\u672c</div><div class="value">'+fmtM(p.totalCost)+'</div></div><div class="platform-card-stat"><div class="label">\u6536\u76ca</div><div class="value '+pc2+'">'+ps2+fmtM(p.profit)+'</div></div><div class="platform-card-stat"><div class="label">\u6536\u76ca\u7387</div><div class="value '+pc2+'">'+ps2+p.profitRate.toFixed(2)+'%</div></div></div></div>'}).join('')}
+
+function goToPlatform(name){state.selectedPlatform=name;switchView('holdings')}
+
+function renderHoldings(){var empty=!state.holdings.length;document.getElementById('holdings-table-wrap').style.display=empty?'none':'';document.getElementById('holdings-empty').style.display=empty?'block':'none';if(empty)return;var names=getPlatformNames();names.unshift('\u5168\u90e8');document.getElementById('platform-tabs').innerHTML=names.map(function(n){return'<span class="platform-tab'+(state.selectedPlatform===n?' active':'')+'" onclick="filterPlatform(\''+esc(n)+'\')">'+esc(n)+' ('+((n==='\u5168\u90e8')?state.holdings.length:state.holdings.filter(function(h){return(h.platform||'\u5176\u4ed6')===n}).length)+')</span>'}).join('');var fs=getFilteredSummary(),pc=fs.profit>=0?'up':'down',ps=fs.profit>=0?'+':'',ypc2=fs.yesterdayProfit>=0?'up':'down',yps2=fs.yesterdayProfit>=0?'+':'';document.getElementById('holdings-summary').innerHTML='<div class="summary-item"><div class="label">\u6301\u4ed3</div><div class="value">'+fs.count+' \u53ea</div></div><div class="summary-item"><div class="label">\u5e02\u503c</div><div class="value">'+fmtM(fs.totalValue)+'</div></div><div class="summary-item"><div class="label">\u6210\u672c</div><div class="value">'+fmtM(fs.totalCost)+'</div></div><div class="summary-item"><div class="label">\u6536\u76ca</div><div class="value '+pc+'">'+ps+fmtM(fs.profit)+'</div></div><div class="summary-item"><div class="label">\u6536\u76ca\u7387</div><div class="value '+pc+'">'+ps+fs.profitRate.toFixed(2)+'%</div></div><div class="summary-item"><div class="label">\u4eca\u65e5\u6536\u76ca</div><div class="value '+ypc2+'">'+yps2+fmtM(Math.abs(fs.yesterdayProfit))+'</div></div>';document.getElementById('holdings-count').textContent=state.selectedPlatform==='\u5168\u90e8'?state.holdings.length+' \u53ea':state.selectedPlatform+' '+fs.count+' \u53ea';var fh=getFilteredHoldings();
+/* 桌面表格 */
+document.getElementById('holdings-tbody').innerHTML=fh.map(function(h){var pc2=(h.profit||0)>=0?'var(--green)':'var(--red)',ps2=(h.profit||0)>=0?'+':'';var nav=h.currentNav?h.currentNav.toFixed(4)+(h.navDate?'<br><span style="font-size:.7rem;color:var(--text-3)">'+h.navDate+'</span>':'')+(h.navSource?'<span class="tag-source">'+esc(h.navSource)+'</span>':''):'<span style="color:var(--text-3)">\u672a\u83b7\u53d6</span>';var dcaTag=h.dca&&h.dca.enabled?'<span class="tag-dca">\u5b9a\u6295</span>':'';var typeTag=h.fundType?'<span class="tag tag-type" style="background:rgba(200,168,78,.1);color:var(--gold);font-size:.65rem;margin-left:4px">'+esc(h.fundType)+'</span>':'';var yp=h.yesterdayProfit||0,ypc=yp>=0?'var(--green)':'var(--red)',yps2=yp>=0?'+':'',ypStr=yp!==0?yps2+fmtM(Math.abs(yp)):'--',ypRateStr=h.yesterdayProfitRate?yps2+h.yesterdayProfitRate.toFixed(2)+'%':'--',ypCell='<div>'+ypStr+'</div><div style="font-size:.68rem;color:var(--text-3)">'+ypRateStr+'</div>';return'<tr><td class="td-code">'+esc(h.code)+'</td><td>'+esc(h.name||'--')+typeTag+dcaTag+'</td><td class="td-money">'+fmtN(h.shares)+'</td><td class="td-money">'+(h.costPerShare?h.costPerShare.toFixed(4):'--')+'</td><td class="td-money">'+nav+'</td><td class="td-money">'+(h.currentValue?fmtM(h.currentValue):'--')+'</td><td class="td-money" style="color:'+pc2+'">'+(h.profit!=null?ps2+fmtM(h.profit):'--')+'</td><td class="td-money" style="color:'+ypc+'">'+ypCell+'</td><td><span class="tag">'+esc(h.platform||'--')+'</span></td><td class="td-actions"><button class="btn btn-outline btn-sm" onclick="showDetail(\''+h.id+'\')">\u8be6\u60c5</button><button class="btn btn-outline btn-sm" onclick="showModal(\''+h.id+'\')">\u7f16\u8f91</button><button class="btn btn-outline btn-sm" onclick="manualNav(\''+h.id+'\')">\u51c0\u503c</button><button class="btn btn-danger btn-sm" onclick="deleteH(\''+h.id+'\')">\u5220\u9664</button></td></tr>'}).join('');
+/* 手机卡片 */
+var mc=document.getElementById('holdings-mobile-cards');if(mc){mc.innerHTML=fh.map(function(h){var pc2=(h.profit||0)>=0?'up':'down',ps2=(h.profit||0)>=0?'+':'';var dcaTag=h.dca&&h.dca.enabled?'<span class="tag-dca">\u5b9a\u6295</span>':'';var typeTag=h.fundType?'<span class="tag tag-type" style="background:rgba(200,168,78,.1);color:var(--gold);font-size:.65rem;margin-left:4px">'+esc(h.fundType)+'</span>':'';var navStr=h.currentNav?h.currentNav.toFixed(4):'\u672a\u83b7\u53d6';var navDateStr=h.navDate?'<div class="nav-date">'+esc(h.navDate)+(h.navSource?' \u00b7 '+esc(h.navSource):'')+'</div>':'';var yp=h.yesterdayProfit||0,ypc=yp>=0?'up':'down',yps2=yp>=0?'+':'',ypStr=yp!==0?yps2+fmtM(Math.abs(yp)):'--';return'<div class="hcard"><div class="hcard-head"><div class="hcard-title"><span class="hcard-name">'+esc(h.name||'--')+'</span>'+typeTag+dcaTag+'</div><div class="hcard-meta"><span class="hcard-code">'+esc(h.code)+'</span><span class="tag">'+esc(h.platform||'--')+'</span></div></div><div class="hcard-stats"><div class="hcard-stat"><div class="label">\u51c0\u503c</div><div class="value">'+navStr+'</div>'+navDateStr+'</div><div class="hcard-stat"><div class="label">\u4efd\u989d</div><div class="value">'+fmtN(h.shares)+'</div></div><div class="hcard-stat"><div class="label">\u6210\u672c\u4ef7</div><div class="value">'+(h.costPerShare?h.costPerShare.toFixed(4):'--')+'</div></div><div class="hcard-stat"><div class="label">\u5e02\u503c</div><div class="value">'+(h.currentValue?fmtM(h.currentValue):'--')+'</div></div><div class="hcard-stat"><div class="label">\u6536\u76ca</div><div class="value '+pc2+'">'+(h.profit!=null?ps2+fmtM(h.profit):'--')+'</div></div><div class="hcard-stat"><div class="label">\u65e5\u6536\u76ca</div><div class="value '+ypc+'">'+ypStr+'</div></div></div><div class="hcard-actions"><button class="btn btn-outline btn-sm" onclick="showDetail(\''+h.id+'\')">\u8be6\u60c5</button><button class="btn btn-outline btn-sm" onclick="showModal(\''+h.id+'\')">\u7f16\u8f91</button><button class="btn btn-outline btn-sm" onclick="manualNav(\''+h.id+'\')">\u51c0\u503c</button><button class="btn btn-danger btn-sm" onclick="deleteH(\''+h.id+'\')">\u5220\u9664</button></div></div>'}).join('')}}
+function filterPlatform(name){state.selectedPlatform=name;renderHoldings()}
+
+function renderDca(){var dcas=getDcaHoldings();document.getElementById('dca-empty').style.display=dcas.length?'none':'block';document.getElementById('dca-list').style.display=dcas.length?'':'none';document.getElementById('dca-stats').style.display=dcas.length?'':'none';if(!dcas.length)return;var ds=getDcaSummary(),pc=ds.profit>=0?'up':'down',ps=ds.profit>=0?'+':'';document.getElementById('dca-stats').innerHTML='<div class="stat-card"><div class="stat-label">\u5b9a\u6295\u57fa\u91d1</div><div class="stat-value">'+ds.count+'</div></div><div class="stat-card"><div class="stat-label">\u7d2f\u8ba1\u6295\u5165</div><div class="stat-value">'+fmtM(ds.totalInvested)+'</div></div><div class="stat-card"><div class="stat-label">\u7d2f\u8ba1\u8d39\u7528</div><div class="stat-value" style="color:var(--orange)">'+fmtM(ds.totalFees)+'</div></div><div class="stat-card"><div class="stat-label">\u5b9a\u6295\u6536\u76ca</div><div class="stat-value" style="color:'+(ds.profit>=0?'var(--green)':'var(--red)')+'">'+ps+fmtM(ds.profit)+'</div><div class="stat-sub '+pc+'">'+ps+ds.profitRate.toFixed(2)+'%</div></div>';document.getElementById('dca-list').innerHTML=dcas.map(function(h){var d=h.dca,history=d.history||[],avgCost=getDcaAvgCost(h),nextDate=getNextDcaDate(d),totalFees=getDcaTotalFees(h),dcaProfit=h.currentNav?((h.currentNav-avgCost)/avgCost*100):0,dpc=dcaProfit>=0?'up':'down',dps=dcaProfit>=0?'+':'',totalInv=history.reduce(function(s,r){return s+r.amount},0),totalSh=history.reduce(function(s,r){return s+r.shares},0),feeRateStr=d.feeRate?(d.feeRate+'%\u8d39\u7387'):'\u65e0\u624b\u7eed\u8d39';var histRows=history.slice().reverse().map(function(r){var at=r.auto?'<span class="tag-auto">\u81ea\u52a8</span>':'';var feeText=(r.fee&&r.fee>0)?fmtM(r.fee):'--';return'<tr><td>'+r.date+at+'</td><td>'+fmtM(r.amount)+'</td><td style="color:var(--orange)">'+feeText+'</td><td>'+r.nav.toFixed(4)+'</td><td>'+r.shares.toFixed(2)+'</td></tr>'}).join('');return'<div class="dca-card"><div class="dca-card-head"><div><div class="dca-card-title">'+esc(h.name||'--')+'<span class="code">'+esc(h.code)+'</span></div><div class="dca-card-freq">'+getFreqLabel(d)+' \u00b7 \u6bcf\u6b21 '+fmtM(d.amount)+' \u00b7 '+feeRateStr+' \u00b7 \u4e0b\u6b21: '+nextDate+'</div></div></div><div class="dca-card-grid"><div class="dca-card-stat"><div class="label">\u6b21\u6570</div><div class="value">'+history.length+'</div></div><div class="dca-card-stat"><div class="label">\u6295\u5165</div><div class="value">'+fmtM(totalInv)+'</div></div><div class="dca-card-stat"><div class="label">\u8d39\u7528</div><div class="value muted">'+fmtM(totalFees)+'</div></div><div class="dca-card-stat"><div class="label">\u4efd\u989d</div><div class="value">'+fmtN(totalSh)+'</div></div><div class="dca-card-stat"><div class="label">\u5e73\u5747\u6210\u672c</div><div class="value">'+avgCost.toFixed(4)+'</div></div><div class="dca-card-stat"><div class="label">\u51c0\u503c</div><div class="value">'+(h.currentNav?h.currentNav.toFixed(4):'--')+'</div></div><div class="dca-card-stat"><div class="label">\u6536\u76ca\u7387</div><div class="value '+dpc+'">'+(h.currentNav?dps+dcaProfit.toFixed(2)+'%':'--')+'</div></div></div><div class="dca-card-actions"><button class="btn btn-green btn-sm" onclick="executeDca(\''+h.id+'\')">\u25b6 \u6267\u884c</button><button class="btn btn-outline btn-sm" onclick="toggleDcaHistory(\''+h.id+'\')">\u8bb0\u5f55 ('+history.length+')</button><button class="btn btn-outline btn-sm" onclick="showModal(\''+h.id+'\')">\u7f16\u8f91</button><button class="btn btn-danger btn-sm" onclick="closeDca(\''+h.id+'\')">\u5173\u95ed</button></div><div class="dca-history" id="dca-hist-'+h.id+'">'+(history.length?'<table><thead><tr><th>\u65e5\u671f</th><th>\u91d1\u989d</th><th>\u8d39\u7528</th><th>\u51c0\u503c</th><th>\u4efd\u989d</th></tr></thead><tbody>'+histRows+'</tbody></table>':'<div style="color:var(--text-3);font-size:.82rem;text-align:center;padding:12px">\u6682\u65e0\u8bb0\u5f55</div>')+'</div></div>'}).join('')}
+
+function renderHistory(){var empty=state.snapshots.length<2;document.getElementById('history-empty').style.display=empty?'block':'none';document.getElementById('trendChart').parentElement.style.display=empty?'none':'';if(!empty)drawLine('trendChart',state.snapshots)}
+function renderSettings(){['autoFetch','autoRefresh','autoDca'].forEach(function(k){var el=document.getElementById('toggle-'+k);if(el)el.classList.toggle('on',!!state.settings[k])})}
+
+var editId=null;
+function showModal(id){editId=id||null;document.getElementById('modal-title').textContent=id?'\u7f16\u8f91\u6301\u4ed3':'\u6dfb\u52a0\u6301\u4ed3';document.getElementById('fund-hint').textContent='';var dt=document.getElementById('f-dca-toggle');dt.classList.remove('on');document.getElementById('dca-fields').style.display='none';document.getElementById('f-dca-fee').value='0';if(id){var h=state.holdings.find(function(x){return x.id===id});if(h){document.getElementById('f-id').value=h.id;document.getElementById('f-code').value=h.code;document.getElementById('f-name').value=h.name||'';document.getElementById('f-shares').value=h.shares;document.getElementById('f-cost').value=h.costPerShare;document.getElementById('f-date').value=h.purchaseDate||'';document.getElementById('f-platform').value=h.platform||'\u5929\u5929\u57fa\u91d1';document.getElementById('f-manual-nav').value='';if(h.dca&&h.dca.enabled){dt.classList.add('on');document.getElementById('dca-fields').style.display='';document.getElementById('f-dca-amount').value=h.dca.amount||'';document.getElementById('f-dca-freq').value=h.dca.frequency||'monthly';document.getElementById('f-dca-day').value=h.dca.day||'';document.getElementById('f-dca-fee').value=h.dca.feeRate||0;document.getElementById('f-dca-start').value=h.dca.startDate||''}}}else{document.getElementById('holding-form').reset();document.getElementById('f-date').value=new Date().toISOString().slice(0,10);document.getElementById('f-platform').value='\u5929\u5929\u57fa\u91d1';document.getElementById('f-dca-start').value=new Date().toISOString().slice(0,10);document.getElementById('f-dca-fee').value='0'}document.getElementById('modal-overlay').classList.add('active');setTimeout(function(){document.getElementById('f-code').focus()},200)}
+function hideModal(){document.getElementById('modal-overlay').classList.remove('active');editId=null}
+function toggleDcaFields(){var t=document.getElementById('f-dca-toggle');t.classList.toggle('on');document.getElementById('dca-fields').style.display=t.classList.contains('on')?'':'none'}
+
+function saveHolding(e){e.preventDefault();var code=document.getElementById('f-code').value.trim(),name=document.getElementById('f-name').value.trim();var shares=parseFloat(document.getElementById('f-shares').value),cost=parseFloat(document.getElementById('f-cost').value);var date=document.getElementById('f-date').value,platform=document.getElementById('f-platform').value.trim()||'\u5176\u4ed6';var mNav=parseFloat(document.getElementById('f-manual-nav').value);if(!code||isNaN(shares)||isNaN(cost)){showToast('\u8bf7\u586b\u5199\u5b8c\u6574','error');return}if(name)cacheName(code,name);var dcaOn=document.getElementById('f-dca-toggle').classList.contains('on');var exHist=[];if(editId){var ex=state.holdings.find(function(x){return x.id===editId});if(ex&&ex.dca&&ex.dca.history)exHist=ex.dca.history}var dcaObj=null;if(dcaOn){var da=parseFloat(document.getElementById('f-dca-amount').value),df=document.getElementById('f-dca-freq').value,dd=parseInt(document.getElementById('f-dca-day').value),ds=document.getElementById('f-dca-start').value,fr=parseFloat(document.getElementById('f-dca-fee').value)||0;if(!da||!dd){showToast('\u8bf7\u586b\u5199\u5b9a\u6295\u91d1\u989d\u548c\u5b9a\u6295\u65e5','error');return}dcaObj={enabled:true,amount:da,feeRate:fr,frequency:df,day:dd,startDate:ds||new Date().toISOString().slice(0,10),history:exHist}}if(editId){var h=state.holdings.find(function(x){return x.id===editId});if(h){h.code=code;h.name=name;h.shares=shares;h.costPerShare=cost;h.totalCost=shares*cost;h.purchaseDate=date;h.platform=platform;h.dca=dcaObj;if(!isNaN(mNav)&&mNav>0){h.currentNav=mNav;h.navDate=new Date().toISOString().slice(0,10);h.navSource='\u624b\u52a8';h.lastUpdated=new Date().toISOString()}if(h.currentNav){h.currentValue=h.currentNav*h.shares;h.profit=h.currentValue-h.totalCost;h.profitRate=h.totalCost>0?(h.profit/h.totalCost*100):0}}showToast('\u5df2\u66f4\u65b0','success')}else{var obj={id:genId(),code:code,name:name,shares:shares,costPerShare:cost,totalCost:shares*cost,purchaseDate:date,platform:platform,currentNav:null,navDate:null,navSource:null,currentValue:null,profit:null,profitRate:null,lastUpdated:null,dca:dcaObj};if(!isNaN(mNav)&&mNav>0){obj.currentNav=mNav;obj.navDate=new Date().toISOString().slice(0,10);obj.navSource='\u624b\u52a8';obj.lastUpdated=new Date().toISOString();obj.currentValue=mNav*shares;obj.profit=obj.currentValue-obj.totalCost;obj.profitRate=obj.totalCost>0?(obj.profit/obj.totalCost*100):0}state.holdings.push(obj);showToast('\u5df2\u6dfb\u52a0'+(dcaObj?' (\u5b9a\u6295)':''),'success');if(state.settings.autoFetch&&!obj.currentNav&&state.apiOk){apiGet('/api/fund?code='+code).then(function(res){if(res.ok&&res.body)applyNav(obj,res.body);saveState();renderCurrentView()}).catch(function(){})}}saveState();hideModal();renderCurrentView()}
+
+function deleteH(id){var h=state.holdings.find(function(x){return x.id===id});if(!h||!confirm('\u786e\u5b9a\u5220\u9664\u300c'+(h.name||h.code)+'\u300d\uff1f'))return;state.holdings=state.holdings.filter(function(x){return x.id!==id});saveState();renderCurrentView();showToast('\u5df2\u5220\u9664','info')}
+function manualNav(id){var h=state.holdings.find(function(x){return x.id===id});if(!h)return;var val=prompt('\u8f93\u5165\u300c'+(h.name||h.code)+'\u300d\u51c0\u503c\uff1a',h.currentNav?h.currentNav.toFixed(4):'');if(val===null)return;var nav=parseFloat(val);if(isNaN(nav)||nav<=0){showToast('\u51c0\u503c\u65e0\u6548','error');return}h.currentNav=nav;h.navDate=new Date().toISOString().slice(0,10);h.navSource='\u624b\u52a8';h.lastUpdated=new Date().toISOString();h.currentValue=nav*h.shares;h.profit=h.currentValue-h.totalCost;h.profitRate=h.totalCost>0?(h.profit/h.totalCost*100):0;saveState();saveSnapshot();renderCurrentView();showToast('\u51c0\u503c\u5df2\u66f4\u65b0','success')}
+
+var codeTmr=null;
+function onCodeInput(code){clearTimeout(codeTmr);var hint=document.getElementById('fund-hint'),ni=document.getElementById('f-name');if(code.length<6){hint.textContent='';hint.className='fund-hint';return}var cached=nameCache[code];if(cached){ni.value=cached;hint.textContent='\u2713 '+cached;hint.className='fund-hint ok'}else{hint.textContent='\u67e5\u8be2\u4e2d...';hint.className='fund-hint'}if(!state.apiOk)return;codeTmr=setTimeout(function(){apiGet('/api/fund?code='+code).then(function(res){if(res.ok&&res.body&&res.body.nav){var nm=res.body.name||'';if(nm.length>1){ni.value=nm;cacheName(code,nm)}hint.innerHTML='\u2713 '+(nm||'')+' \u00b7 '+res.body.nav.toFixed(4)+' \u00b7 '+res.body.navDate+(res.body.fundType?' \u00b7 <span style="color:var(--gold)">'+esc(res.body.fundType)+'</span>':'')+' \u00b7 '+res.body.source;hint.className='fund-hint ok'}else{hint.textContent='\u83b7\u53d6\u5931\u8d25';hint.className='fund-hint err'}}).catch(function(e){hint.textContent='\u5931\u8d25:'+e.message;hint.className='fund-hint warn'})},500)}
+
+/* ===== 导入导出 ===== */
+function getExportData(){return{version:3.7,exportDate:new Date().toISOString(),holdings:state.holdings,snapshots:state.snapshots,settings:state.settings,nameCache:nameCache}}
+function doImport(d){var funds=d.holdings;if(!funds){if(Array.isArray(d)){funds=d}else if(d.funds&&Array.isArray(d.funds)){funds=d.funds}else{throw new Error('\u683c\u5f0f\u9519\u8bef\uff0c\u7f3a\u5c11 holdings \u5b57\u6bb5')}}funds.forEach(function(f){if(!f.id){f.id=f._id||genId()}});if(!confirm('\u5bfc\u5165\u5c06\u8986\u76d6\u5f53\u524d\u6570\u636e\uff1f'))return;var converted=funds.map(function(f){var h={};h.id=f.id||f._id||genId();h.code=f.code||'';h.name=f.name||'';h.shares=parseFloat(f.shares)||0;h.costPerShare=parseFloat(f.costPerShare||f.costPrice)||0;h.purchaseDate=f.purchaseDate||f.date||'';h.platform=f.platform||'\u5176\u4ed6';h.fundType=f.fundType||'';h.currentNav=parseFloat(f.currentNav||f.nav)||0;h.navDate=f.navDate||'';h.navSource=f.navSource||'';h.prevNav=f.prevNav!=null?parseFloat(f.prevNav):null;h.prevNavDate=f.prevNavDate||'';h.lastUpdated=f.lastUpdated||'';h.fundType=f.fundType||'';if(h.costPerShare>0&&h.shares>0){h.totalCost=h.shares*h.costPerShare}else{h.totalCost=parseFloat(f.totalCost)||0}if(h.currentNav>0&&h.shares>0){h.currentValue=h.currentNav*h.shares}else{h.currentValue=parseFloat(f.currentValue)||0}if(h.totalCost>0){h.profit=h.currentValue-h.totalCost;h.profitRate=h.profit/h.totalCost*100}else{h.profit=0;h.profitRate=0}if(h.currentNav&&h.prevNav&&h.prevNav>0){h.yesterdayProfit=h.shares*(h.currentNav-h.prevNav);h.yesterdayProfitRate=(h.currentNav-h.prevNav)/h.prevNav*100}else{h.yesterdayProfit=0;h.yesterdayProfitRate=0}if(f.dca&&f.dca.on===true){h.dca={enabled:true,amount:parseFloat(f.dca.amount)||0,feeRate:parseFloat(f.dca.feeRate)||0,frequency:f.dca.frequency||'monthly',day:parseInt(f.dca.day)||1,startDate:f.dca.startDate||f.purchaseDate||'',history:f.dca.history||[]}}else if(f.dca&&f.dca.enabled){h.dca={enabled:true,amount:parseFloat(f.dca.amount)||0,feeRate:parseFloat(f.dca.feeRate)||0,frequency:f.dca.frequency||'monthly',day:parseInt(f.dca.day)||1,startDate:f.dca.startDate||f.purchaseDate||'',history:f.dca.history||[]}}else{h.dca=f.dca||null}cacheName(h.code,h.name);return h});state.holdings=converted;var snapshots=d.snapshots||d.trendData||[];if(snapshots.length&&snapshots[0]&&snapshots[0].month){state.snapshots=snapshots.map(function(s){return{date:s.month+'-01',totalValue:parseFloat(s.value)||0,totalCost:0,profit:0}}).sort(function(a,b){return a.date.localeCompare(b.date)})}else{state.snapshots=snapshots}if(d.settings)state.settings={...state.settings,...d.settings};if(d.nameCache)nameCache={...nameCache,...d.nameCache};try{localStorage.setItem('fv_nameCache',JSON.stringify(nameCache))}catch(x){}saveState();renderCurrentView()}
+function exportData(){var d=getExportData();var b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='fundvault_'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(a.href);showToast('\u5df2\u4e0b\u8f7d\u6587\u4ef6','success')}
+function exportText(){var d=getExportData();document.getElementById('export-output').value=JSON.stringify(d);document.getElementById('export-modal').classList.add('active')}
+function hideExportModal(){document.getElementById('export-modal').classList.remove('active')}
+function copyExportText(){var ta=document.getElementById('export-output');ta.select();ta.setSelectionRange(0,999999);try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(ta.value).then(function(){showToast('\u5df2\u590d\u5236\u5230\u526a\u8d34\u677f','success')}).catch(function(){document.execCommand('copy');showToast('\u5df2\u590d\u5236','success')})}else{document.execCommand('copy');showToast('\u5df2\u590d\u5236','success')}}catch(e){showToast('\u8bf7\u624b\u52a8\u957f\u6309\u9009\u62e9\u590d\u5236','warn')}}
+function importData(ev){var f=ev.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(e){try{var d=JSON.parse(e.target.result);doImport(d);showToast('\u5bfc\u5165\u6210\u529f','success')}catch(err){showToast('\u5bfc\u5165\u5931\u8d25:'+err.message,'error')}};r.readAsText(f);ev.target.value=''}
+function showPasteModal(){document.getElementById('paste-modal').classList.add('active');setTimeout(function(){document.getElementById('paste-input').focus()},200)}
+function hidePasteModal(){document.getElementById('paste-modal').classList.remove('active');document.getElementById('paste-input').value=''}
+function importFromPaste(){var text=document.getElementById('paste-input').value.trim();if(!text){showToast('\u8bf7\u7c98\u8d34 JSON \u6570\u636e','error');return}try{var d=JSON.parse(text);doImport(d);hidePasteModal();showToast('\u5bfc\u5165\u6210\u529f','success')}catch(err){showToast('\u5bfc\u5165\u5931\u8d25:'+err.message,'error')}}
+function clearAllData(){if(!confirm('\u786e\u5b9a\u6e05\u7a7a\uff1f'))return;state.holdings=[];state.snapshots=[];nameCache={};saveState();try{localStorage.removeItem('fv_nameCache')}catch(e){};renderCurrentView();showToast('\u5df2\u6e05\u7a7a','info')}
+function toggleSetting(k){state.settings[k]=!state.settings[k];saveState();renderSettings();showToast(({'autoFetch':'\u81ea\u52a8\u83b7\u53d6','autoRefresh':'\u81ea\u52a8\u5237\u65b0','autoDca':'\u81ea\u52a8\u8865\u6267\u884c'}[k]||k)+(state.settings[k]?' \u5df2\u5f00\u542f':' \u5df2\u5173\u95ed'),'info')}
+
+function showToast(msg,type){type=type||'info';var c=document.getElementById('toast-container'),t=document.createElement('div');t.className='toast '+type;t.textContent=msg;c.appendChild(t);requestAnimationFrame(function(){t.classList.add('show')});setTimeout(function(){t.classList.remove('show');setTimeout(function(){t.remove()},300)},4000)}
+function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
+function fmtM(n){return n==null||isNaN(n)?'--':'\u00a5'+n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',')}
+function fmtN(n){return n==null||isNaN(n)?'--':n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',')}
+function esc(s){return s?s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'):''}
+function trunc(s,m){return s&&s.length>m?s.slice(0,m)+'..':s}
+
+document.querySelectorAll('.nav-item').forEach(function(i){i.addEventListener('click',function(){switchView(this.dataset.view)})});
+document.getElementById('modal-overlay').addEventListener('click',function(e){if(e.target===this)hideModal()});
+document.getElementById('paste-modal').addEventListener('click',function(e){if(e.target===this)hidePasteModal()});
+document.getElementById('export-modal').addEventListener('click',function(e){if(e.target===this)hideExportModal()});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){hideModal();hidePasteModal();hideExportModal()}});
+var rT;window.addEventListener('resize',function(){clearTimeout(rT);rT=setTimeout(renderCurrentView,200)});
+loadState();renderDashboard();
+checkApi().then(async function(ok){if(ok){var ac=await autoExecuteDcas();if(ac>0){showToast('\u81ea\u52a8\u8865\u6267\u884c '+ac+' \u6b21\u5b9a\u6295','success');renderCurrentView()}if(state.settings.autoRefresh&&state.holdings.length)setTimeout(refreshAllNav,500)}renderSettings()});
+
+// ===== 基金详情侧滑面板 =====
+var detailFundId=null;
+function showDetail(id){var h=state.holdings.find(function(x){return x.id===id});if(!h)return;detailFundId=id;document.getElementById('detail-name').textContent=h.name||h.code;document.getElementById('detail-platform').textContent=h.platform||'';var ftEl=document.getElementById('detail-fundtype');if(h.fundType){ftEl.textContent=h.fundType;ftEl.style.display=''}else{ftEl.style.display='none'}document.getElementById('detail-nav').textContent=h.currentNav?h.currentNav.toFixed(4):'--';document.getElementById('detail-navdate').textContent=h.navDate||'';document.getElementById('detail-prevnav').textContent=h.prevNav?h.prevNav.toFixed(4):'--';document.getElementById('detail-prevnavdate').textContent=h.prevNavDate||'';var yp=h.yesterdayProfit||0;document.getElementById('detail-yprofit').textContent=(yp>=0?'+':'-')+fmtM(Math.abs(yp));document.getElementById('detail-yprofit').style.color=yp>=0?'var(--green)':'var(--red)';document.getElementById('detail-yprofit-rate').textContent=h.yesterdayProfitRate?((h.yesterdayProfitRate>=0?'+':'')+h.yesterdayProfitRate.toFixed(2)+'%'):'';var p=h.profit||0;document.getElementById('detail-profit').textContent=(p>=0?'+':'-')+fmtM(Math.abs(p));document.getElementById('detail-profit').style.color=p>=0?'var(--green)':'var(--red)';document.getElementById('detail-profit-rate').textContent=h.profitRate!=null?((h.profitRate>=0?'+':'')+h.profitRate.toFixed(2)+'%'):'';document.getElementById('detail-shares').textContent=fmtN(h.shares);document.getElementById('detail-cost').textContent=h.costPerShare?h.costPerShare.toFixed(4):'--';document.getElementById('detail-totalcost').textContent=fmtM(h.totalCost);document.getElementById('detail-value').textContent=h.currentValue?fmtM(h.currentValue):'--';document.getElementById('detail-chart-loading').style.display='flex';document.getElementById('detail-daily-list').innerHTML='<div class="detail-empty">\u52a0\u8f7d\u4e2d...</div>';document.getElementById('detail-overlay').classList.add('active');loadFundTrend(h)}
+async function loadFundTrend(h){try{var res=await apiGet('/api/fund/history?code='+h.code+'&size=15');if(res.ok&&res.body&&Object.keys(res.body).length>1){drawDetailChart(res.body,h);buildDailyList(res.body,h)}else{document.getElementById('detail-chart-loading').style.display='none';document.getElementById('detail-daily-list').innerHTML='<div class="detail-empty">\u6682\u65e0\u8d8a\u52bf\u6570\u636e</div>'}}catch(e){document.getElementById('detail-chart-loading').style.display='none';document.getElementById('detail-daily-list').innerHTML='<div class="detail-empty">\u52a0\u8f7d\u5931\u8d25</div>'}}
+function drawDetailChart(navMap,h){document.getElementById('detail-chart-loading').style.display='none';var cv=document.getElementById('detail-chart');if(!cv)return;var ctx=cv.getContext('2d'),dpr=window.devicePixelRatio||1,rc=cv.getBoundingClientRect();cv.width=rc.width*dpr;cv.height=rc.height*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,rc.width,rc.height);var dates=Object.keys(navMap).sort();if(dates.length<2)return;var shares=h.shares||0,costPrice=h.costPerShare||0;var dailyReturns=[],cumulative=0;for(var i=1;i<dates.length;i++){var dayReturn=shares*(navMap[dates[i]]-navMap[dates[i-1]]);cumulative+=dayReturn;dailyReturns.push({date:dates[i],amount:dayReturn,cumulative:cumulative})}var lastNav=navMap[dates[dates.length-1]];var actualHoldingReturn=shares*(lastNav-costPrice);if(dailyReturns.length>0&&dailyReturns[dailyReturns.length-1].cumulative!==0){var scale=actualHoldingReturn/dailyReturns[dailyReturns.length-1].cumulative;dailyReturns.forEach(function(d){d.cumulative=d.cumulative*scale})}var pd={t:20,r:16,b:36,l:52};var w=rc.width-pd.l-pd.r,hh=rc.height-pd.t-pd.b;var vals=dailyReturns.map(function(d){return d.cumulative});if(vals.length===0)return;var mn=Math.min.apply(null,vals)*1.1,mx=Math.max.apply(null,vals)*1.1;if(mn>0&&mx>0){mn=Math.min(0,mn)}if(mn<0&&mx<0){mx=Math.max(0,mx)}var rng=mx-mn||1;ctx.strokeStyle='rgba(42,42,66,.5)';ctx.lineWidth=.5;for(var i=0;i<=4;i++){var y=pd.t+(hh/4)*i;ctx.beginPath();ctx.moveTo(pd.l,y);ctx.lineTo(pd.l+w,y);ctx.stroke();ctx.fillStyle=VT3;ctx.font='10px "DM Mono",monospace';ctx.textAlign='right';ctx.textBaseline='middle';ctx.fillText((mx-(rng/4)*i).toFixed(0),pd.l-6,y)}ctx.fillStyle=VT3;ctx.font='10px "DM Mono",monospace';ctx.textAlign='center';ctx.textBaseline='top';var step=Math.max(1,Math.floor(dailyReturns.length/5));dailyReturns.forEach(function(d,idx){if(idx%step===0||idx===dailyReturns.length-1){var parts=d.date.split('-');ctx.fillText(parseInt(parts[1])+'/'+parseInt(parts[2]),pd.l+(idx/(dailyReturns.length-1))*w,pd.t+hh+8)}});var gr=ctx.createLinearGradient(0,pd.t,0,pd.t+hh);gr.addColorStop(0,'rgba(79,124,255,.2)');gr.addColorStop(1,'rgba(79,124,255,0)');ctx.beginPath();dailyReturns.forEach(function(d,idx){var x=pd.l+(idx/(dailyReturns.length-1))*w;var y=pd.t+hh-((d.cumulative-mn)/rng)*hh;idx===0?ctx.moveTo(x,y):ctx.lineTo(x,y)});ctx.lineTo(pd.l+w,pd.t+hh);ctx.lineTo(pd.l,pd.t+hh);ctx.closePath();ctx.fillStyle=gr;ctx.fill();ctx.strokeStyle='#4f7cff';ctx.lineWidth=2;ctx.lineJoin='round';ctx.beginPath();dailyReturns.forEach(function(d,idx){var x=pd.l+(idx/(dailyReturns.length-1))*w;var y=pd.t+hh-((d.cumulative-mn)/rng)*hh;idx===0?ctx.moveTo(x,y):ctx.lineTo(x,y)});ctx.stroke();var last=dailyReturns[dailyReturns.length-1];var lx=pd.l+w;var ly=pd.t+hh-((last.cumulative-mn)/rng)*hh;ctx.beginPath();ctx.arc(lx,ly,4,0,Math.PI*2);ctx.fillStyle=last.cumulative>=0?'#50c878':'#e85050';ctx.fill();window._detailDailyReturns=dailyReturns}
+function buildDailyList(navMap,h){var shares=h.shares||0;var dates=Object.keys(navMap).sort();var dailyReturns=window._detailDailyReturns||[];var navDateMap={};dates.forEach(function(d,i){navDateMap[d]=navMap[d]});var html='';for(var i=dailyReturns.length-1;i>=0;i--){var d=dailyReturns[i];var dateParts=d.date.split('-');var dateShort=parseInt(dateParts[1])+'/'+parseInt(dateParts[2]);var cls=d.amount>=0?'up':'down';var prefix=d.amount>=0?'+':'-';html+='<div class="detail-daily-item"><span class="detail-daily-date">'+dateShort+'</span><span class="detail-daily-amount '+cls+'">'+prefix+fmtM(Math.abs(d.amount))+'</span><span class="detail-daily-cumul">'+(d.cumulative>=0?'+':'')+fmtM(d.cumulative)+'</span></div>'}if(!html)html='<div class="detail-empty">\u6682\u65e0\u6570\u636e</div>';document.getElementById('detail-daily-list').innerHTML=html}
+function closeDetail(e){if(e&&e.target!==document.getElementById('detail-overlay'))return;closeDetailPanel()}
+function closeDetailPanel(){document.getElementById('detail-overlay').classList.remove('active');detailFundId=null}
+</script>
+</body>
+</html>
+
